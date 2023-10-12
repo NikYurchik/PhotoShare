@@ -6,11 +6,11 @@ from sqlalchemy.sql.schema import ForeignKey, Table
 
 Base = declarative_base()
 
-tag_photo_association_table = Table(
+tag_photo_association = Table(
     'tag_m2m_photo',
     Base.metadata,
-    Column('tag_id', Integer, ForeignKey('tags.id')),
-    Column('photo_id', Integer, ForeignKey('photos.id'))
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
+    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
 )
 
 
@@ -37,7 +37,7 @@ class User(Base):
 class Photo(Base):
     __tablename__ = "photos"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
     file_url = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
@@ -55,7 +55,7 @@ class PhotoURL(Base):
     __tablename__ = "photo_urls"
     id = Column(Integer, primary_key=True)
     url = Column(String, nullable=False, unique=True)
-    photo_id = Column(Integer, ForeignKey("photos.id"))
+    photo_id = Column(Integer, ForeignKey("photos.id", ondelete='CASCADE'))
     created_at = Column('created_at', DateTime, default=func.now())
     photo = relationship('Photo', backref='urls')
 
@@ -63,8 +63,8 @@ class PhotoURL(Base):
 class Comment(Base):
     __tablename__ = "comments"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    photo_id = Column(Integer, ForeignKey('photos.id'))
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    photo_id = Column(Integer, ForeignKey('photos.id', ondelete='CASCADE'))
     text = Column(String(500), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now())
