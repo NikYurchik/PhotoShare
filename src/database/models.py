@@ -38,7 +38,7 @@ class Photo(Base):
     __tablename__ = "photos"
     id = Column(Integer, primary_key=True)
     photo_user_id = Column(Integer, ForeignKey('users.id'))
-    photo_file_path = Column(String, nullable=False, unique=True)
+    photo_file_url = Column(String, nullable=False, unique=True)
     photo_description = Column(String, nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now())
