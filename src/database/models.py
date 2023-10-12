@@ -9,8 +9,8 @@ Base = declarative_base()
 tag_photo_association_table = Table(
     'tag_m2m_photo',
     Base.metadata,
-    Column('tag_id', Integer, ForeignKey('tag.id')),
-    Column('photo_id', Integer, ForeignKey('photo.id'))
+    Column('tag_id', Integer, ForeignKey('tags.id')),
+    Column('photo_id', Integer, ForeignKey('photos.id'))
 )
 
 
@@ -26,7 +26,7 @@ class User(Base):
     username = Column(String(50))
     email = Column(String(250), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
-    created_at = Column('crated_at', DateTime, default=func.now())
+    created_at = Column('created_at', DateTime, default=func.now())
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
@@ -68,5 +68,5 @@ class Comment(Base):
     comment_text = Column(String(500), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now())
-    photo = relationship('Photo', backref='urls')
-    user = relationship('User', backref='urls')
+    photo = relationship('Photo', backref='comments')
+    user = relationship('User', backref='comments')
