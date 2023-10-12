@@ -37,9 +37,9 @@ class User(Base):
 class Photo(Base):
     __tablename__ = "photos"
     id = Column(Integer, primary_key=True)
-    photo_user_id = Column(Integer, ForeignKey('users.id'))
-    photo_file_url = Column(String, nullable=False, unique=True)
-    photo_description = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    file_url = Column(String, nullable=False, unique=True)
+    description = Column(String, nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now())
     user = relationship('User', backref='photos')
@@ -48,14 +48,14 @@ class Photo(Base):
 class Tag(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True)
-    tag_name = Column(String, nullable=False, unique=True)
+    name = Column(String, nullable=False, unique=True)
 
 
 class PhotoURL(Base):
     __tablename__ = "photo_urls"
     id = Column(Integer, primary_key=True)
     url = Column(String, nullable=False, unique=True)
-    url_photo_id = Column(Integer, ForeignKey("photos.id"))
+    photo_id = Column(Integer, ForeignKey("photos.id"))
     created_at = Column('created_at', DateTime, default=func.now())
     photo = relationship('Photo', backref='urls')
 
@@ -63,9 +63,9 @@ class PhotoURL(Base):
 class Comment(Base):
     __tablename__ = "comments"
     id = Column(Integer, primary_key=True)
-    comment_user_id = Column(Integer, ForeignKey('users.id'))
-    comment_photo_id = Column(Integer, ForeignKey('photos.id'))
-    comment_text = Column(String(500), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    photo_id = Column(Integer, ForeignKey('photos.id'))
+    text = Column(String(500), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now())
     photo = relationship('Photo', backref='comments')
