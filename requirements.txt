@@ -1,0 +1,17 @@
+fastapi
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+python-dotenv
+libgravatar
+fastapi-mail
+redis
+fastapi-limiter
+fastapi-jwt-auth
+cloudinary
+sqlalchemy
+pydantic-settings
+pydantic[settings]
+alembic
+uvicorn
