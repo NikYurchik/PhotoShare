@@ -100,25 +100,25 @@ user_agent_ban_list = [r"Python-urllib"]
 #     return response
 
 
-@app.middleware("http")
-async def user_agent_ban_middleware(request: Request, call_next: Callable):
-    """
-    The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
-        If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
-        Otherwise, it calls call_next and returns its result.
+# @app.middleware("http")
+# async def user_agent_ban_middleware(request: Request, call_next: Callable):
+#     """
+#     The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
+#         If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
+#         Otherwise, it calls call_next and returns its result.
     
-    :param request: Request: Access the request object
-    :param call_next: Callable: Pass the request to the next middleware in line
-    :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list
-    :doc-author: Python-WEB13-project-team-2
-    """
-    user_agent = request.headers.get("user-agent")
-    # print(f'user_agent: {user_agent}')
-    for ban_pattern in user_agent_ban_list:
-        if re.search(ban_pattern, user_agent):
-            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.YOU_ARE_BANNED})
-    response = await call_next(request)
-    return response
+#     :param request: Request: Access the request object
+#     :param call_next: Callable: Pass the request to the next middleware in line
+#     :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list
+#     :doc-author: Python-WEB13-project-team-2
+#     """
+#     user_agent = request.headers.get("user-agent")
+#     # print(f'user_agent: {user_agent}')
+#     for ban_pattern in user_agent_ban_list:
+#         if re.search(ban_pattern, user_agent):
+#             return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.YOU_ARE_BANNED})
+#     response = await call_next(request)
+#     return response
 
 
 @app.get("/", response_class=HTMLResponse, description="Main Page", dependencies=[Depends(RateLimiter(times=10, seconds=60))])
