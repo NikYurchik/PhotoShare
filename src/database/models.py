@@ -2,9 +2,16 @@ import enum
 
 from sqlalchemy import Column, Integer, String, DateTime, func, event, UniqueConstraint, Boolean, Enum
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.sql.schema import ForeignKey, Table
 
 Base = declarative_base()
+
+tag_photo_association_table = Table(
+    'tag_m2m_photo',
+    Base.metadata,
+    Column('tag_id', Integer, ForeignKey('tag.id')),
+    Column('photo_id', Integer, ForeignKey('photo.id'))
+)
 
 
 class Role(enum.Enum):
@@ -44,18 +51,13 @@ class Tag(Base):
     tag_name = Column(String, nullable=False, unique=True)
 
 
-class Photo_m2m_Tags(Base):
-    __tablename__ = "photo_m2m_tags"
-    photo_id = Column(Integer, ForeignKey('photos.id'))
-    tag_id = Column(Integer, ForeignKey('tags.id'))
-
-
 class PhotoURL(Base):
     __tablename__ = "photo_urls"
     id = Column(Integer, primary_key=True)
     url = Column(String, nullable=False, unique=True)
     url_photo_id = Column(Integer, ForeignKey("photos.id"))
     created_at = Column('created_at', DateTime, default=func.now())
+    photo = relationship('Photo', backref='urls')
 
 
 class Comment(Base):
@@ -66,3 +68,5 @@ class Comment(Base):
     comment_text = Column(String(500), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now())
+    photo = relationship('Photo', backref='urls')
+    user = relationship('User', backref='urls')
