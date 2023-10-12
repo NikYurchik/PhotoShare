@@ -26,3 +26,14 @@ class User(Base):
     roles = Column('roles', Enum(Role), default=Role.user)
     is_banned = Column(Boolean, default=False)
 
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(ForeignKey('users.id', ondelete='CASCADE'))
+    text = Column(String(2200))  # Instagram chars limit
+    photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'))
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now())
+
+
