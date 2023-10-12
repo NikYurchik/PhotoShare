@@ -41,7 +41,7 @@ class Photo(Base):
     file_url = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
-    updated_at = Column('updated_at', DateTime, default=func.now())
+    updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
     user = relationship('User', backref='photos')
 
 
@@ -67,6 +67,6 @@ class Comment(Base):
     photo_id = Column(Integer, ForeignKey('photos.id', ondelete='CASCADE'))
     text = Column(String(500), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
-    updated_at = Column('updated_at', DateTime, default=func.now())
+    updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
     photo = relationship('Photo', backref='comments')
     user = relationship('User', backref='comments')
