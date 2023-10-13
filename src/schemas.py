@@ -23,6 +23,10 @@ class UserDb(BaseModel):
         from_attributes = True
 
 
+class UserDbAdmin(UserDb):
+    confirmed: bool
+    is_banned: bool
+
 class UserResponse(BaseModel):
     user: UserDb
     detail: str = "User successfully created"

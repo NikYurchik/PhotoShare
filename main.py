@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
 from src.routes import auth, users
+from src.repository.users import check_user_admin
 from src.conf.config import settings
 from src.conf import messages
 
@@ -31,6 +32,7 @@ async def startup():
     
     :return: A redis connection pool
     """
+    await check_user_admin()
     r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
     await FastAPILimiter.init(r)
 
@@ -157,4 +159,5 @@ def healthchecker(db: Session = Depends(get_db)):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # check_user_admin()
+    uvicorn.run(app, host="0.0.0.0", port=8080)
