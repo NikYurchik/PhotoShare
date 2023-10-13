@@ -1,8 +1,38 @@
+from datetime import datetime
+
 from libgravatar import Gravatar
 from sqlalchemy.orm import Session
+from sqlalchemy import between, and_, or_
+from sqlalchemy.exc import SQLAlchemyError
 
-from src.database.models import User
+from src.database.db import DBSession
+from src.database.models import User, Role
 from src.schemas import UserModel
+
+
+async def get_users(limit: int, offset: int, db: Session):
+    users = db.query(User).limit(limit).offset(offset).all()
+    return users
+
+
+async def get_users_by_mask(limit: int, offset: int, search_mask:str, db: Session):
+    users = db.query(User).\
+            filter(or_(User.username.like(search_mask), User.email.like(search_mask))).\
+            limit(limit).offset(offset).all()
+    return users
+
+
+async def get_user_by_id(user_id: int, db: Session):
+    user = db.query(User).filter(User.id == user_id).first()
+    return user
+
+
+async def toggle_banned_user(user_id: int, db: Session) -> User:
+    print(f"toogle_ban user_id: {user_id}")
+    user = await get_user_by_id(user_id, db)
+    user.is_banned = not user.is_banned
+    db.commit()
+    return user
 
 
 async def get_user_by_email(email: str, db: Session) -> User:
@@ -37,6 +67,7 @@ async def create_user(body: UserModel, db: Session) -> User:
         avatar = g.get_image()
     except Exception as err:
         print(err)
+        avatar = ""
     # new_user = User(**body.dict(), avatar=avatar)
     new_user = User(username=body.username, email=body.email, password=body.password, avatar=avatar)
     db.add(new_user)
@@ -73,7 +104,7 @@ async def confirmed_email(email: str, db: Session) -> None:
     db.commit()
 
 
-async def update_avatar(email, url: str, db: Session) -> User:
+async def update_avatar(user: User, url: str, db: Session) -> User:
     """
     The update_avatar function updates the avatar of a user.
     
@@ -88,8 +119,35 @@ async def update_avatar(email, url: str, db: Session) -> User:
     :return: A user object
     :doc-author: Python-WEB13-project-team-2
     """
-    user = await get_user_by_email(email, db)
+    # user = await get_user_by_email(email, db)
     user.avatar = url
     db.commit()
     return user
 
+
+async def check_user_admin():
+    NULL_DATE = datetime.now().replace(day=1)
+    db = DBSession()
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if user:
+            if user.avatar is None:
+                user.avatar = ""
+            if user.created_at is None:
+                user.created_at = NULL_DATE
+        else:
+            new_user = User(username= "admin",
+                            email="admin@email.com",
+                            password="admin",
+                            avatar="",
+                            confirmed=True,
+                            roles=Role.admin,
+                            is_banned=False)
+            db.add(new_user)
+        db.commit()
+    except SQLAlchemyError as err:
+        db.rollback()
+        raise err
+    finally:
+        db.close()
+    
