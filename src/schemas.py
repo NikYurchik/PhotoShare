@@ -1,6 +1,7 @@
 from datetime import datetime, date
+from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator, constr
 
 from src.database.models import Role
 
@@ -15,8 +16,8 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: EmailStr
-    created_at: datetime
-    avatar: str
+    created_at: Optional[datetime]
+    avatar: Optional[str]
     roles: Role
 
     class Config:
@@ -36,4 +37,27 @@ class TokenModel(BaseModel):
 
 class RequestEmail(BaseModel):
     email: EmailStr
+
+
+class PhotoSchema(BaseModel):
+    id: int
+    file_url: str
+    description: str
+    created_at: datetime
+    user_id: int
+
+
+class PhotoUpdateModel(BaseModel):
+    description: str
+
+
+class TagDetail(BaseModel):
+    id: int
+    name: str
+
+
+class PhotoResponse(BaseModel):
+    photo: PhotoSchema
+    tags: List[TagDetail]
+
 
