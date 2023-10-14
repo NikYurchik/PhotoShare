@@ -16,8 +16,8 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
-from src.routes import auth, users
-from src.repository.users import check_user_admin
+from src.routes import auth, users, myuser
+# from src.repository.users import check_user_admin
 from src.conf.config import settings
 from src.conf import messages
 
@@ -32,7 +32,7 @@ async def startup():
     
     :return: A redis connection pool
     """
-    await check_user_admin()
+    # await check_user_admin()
     r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
     await FastAPILimiter.init(r)
 
@@ -54,6 +54,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
+app.include_router(myuser.router, prefix='/api')
 
 
 templates = Jinja2Templates(directory='templates')
@@ -102,25 +103,25 @@ user_agent_ban_list = [r"Python-urllib"]
 #     return response
 
 
-# @app.middleware("http")
-# async def user_agent_ban_middleware(request: Request, call_next: Callable):
-#     """
-#     The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
-#         If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
-#         Otherwise, it calls call_next and returns its result.
+@app.middleware("http")
+async def user_agent_ban_middleware(request: Request, call_next: Callable):
+    """
+    The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
+        If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
+        Otherwise, it calls call_next and returns its result.
     
-#     :param request: Request: Access the request object
-#     :param call_next: Callable: Pass the request to the next middleware in line
-#     :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list
-#     :doc-author: Python-WEB13-project-team-2
-#     """
-#     user_agent = request.headers.get("user-agent")
-#     # print(f'user_agent: {user_agent}')
-#     for ban_pattern in user_agent_ban_list:
-#         if re.search(ban_pattern, user_agent):
-#             return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.YOU_ARE_BANNED})
-#     response = await call_next(request)
-#     return response
+    :param request: Request: Access the request object
+    :param call_next: Callable: Pass the request to the next middleware in line
+    :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list
+    :doc-author: Python-WEB13-project-team-2
+    """
+    user_agent = request.headers.get("user-agent")
+    # print(f'user_agent: {user_agent}')
+    for ban_pattern in user_agent_ban_list:
+        if re.search(ban_pattern, user_agent):
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.YOU_ARE_BANNED})
+    response = await call_next(request)
+    return response
 
 
 @app.get("/", response_class=HTMLResponse, description="Main Page", dependencies=[Depends(RateLimiter(times=10, seconds=60))])
@@ -159,5 +160,4 @@ def healthchecker(db: Session = Depends(get_db)):
 
 
 if __name__ == "__main__":
-    # check_user_admin()
     uvicorn.run(app, host="0.0.0.0", port=8080)
