@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime, date
 from typing import Optional, List
 
@@ -16,13 +17,19 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: EmailStr
-    created_at: Optional[datetime]
-    avatar: Optional[str]
+    created_at: Optional[datetime] = datetime.now()
+    # created_at: datetime = datetime.now()
+    avatar: Optional[str] = None
+    # avatar: str = None
     roles: Role
 
     class Config:
         from_attributes = True
 
+
+class UserDbAdmin(UserDb):
+    confirmed: bool
+    is_banned: bool
 
 class UserResponse(BaseModel):
     user: UserDb
