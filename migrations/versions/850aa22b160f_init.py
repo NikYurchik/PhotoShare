@@ -46,7 +46,7 @@ def upgrade() -> None:
                 "email": "admin@email.com",
                 "password": auth_service.get_password_hash("admin"),
                 "crated_at": crated_at,
-                "avatar": "",
+                # "avatar": "",
                 "confirmed": True,
                 "roles": "admin",
                 "is_banned": False,

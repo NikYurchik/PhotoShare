@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime, date
 
 from pydantic import BaseModel, Field, EmailStr
@@ -15,8 +16,10 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: EmailStr
-    created_at: datetime
-    avatar: str
+    created_at: Optional[datetime] = datetime.now()
+    # created_at: datetime = datetime.now()
+    avatar: Optional[str] = None
+    # avatar: str = None
     roles: Role
 
     class Config:
