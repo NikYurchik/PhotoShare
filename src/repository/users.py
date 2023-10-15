@@ -30,8 +30,18 @@ async def get_user_by_id(user_id: int, db: Session):
 async def toggle_banned_user(user_id: int, db: Session) -> User:
     # print(f"toogle_ban user_id: {user_id}")
     user = await get_user_by_id(user_id, db)
-    user.is_banned = not user.is_banned
-    db.commit()
+    if user:
+        user.is_banned = not user.is_banned
+        db.commit()
+    return user
+
+
+async def set_roles_user(user_id: int, role: Role, db: Session) -> User:
+    # print(f"toogle_ban user_id: {user_id}")
+    user = await get_user_by_id(user_id, db)
+    if user:
+        user.roles = role
+        db.commit()
     return user
 
 

@@ -15,6 +15,7 @@ CHECK_YOUR_EMAIL_FOR_CONFIRMATION = "Check your email for confirmation."
 
 NO_MORE_THAN_10_REQUESTS_PER_MINUTE = "No more than 10 requests per minute"
 NOT_FOUND = "Not Found"
+FORBIDDEN = "Operation forbidden"
 
 CONTACTS_APP = "PhotoShare"
 WELCOME_TO_FASTAPI = "Welcome to FastAPI!"

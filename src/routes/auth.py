@@ -52,7 +52,7 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     if not user.confirmed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.EMAIL_NOT_CONFIRMED)
     if user.is_banned:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.YOU_ARE_BANNED)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.YOU_ARE_BANNED)
     if not auth_service.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_PASSWORD)
     # Generate JWT
