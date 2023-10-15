@@ -61,6 +61,7 @@ app.include_router(myuser.router, prefix='/api')
 templates = Jinja2Templates(directory='templates')
 BASE_DIR = pathlib.Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+app.mount("/htmlcov", StaticFiles(directory=BASE_DIR / "htmlcov"), name="htmlcov")
 
 
 # ALLOWED_IPS = [
