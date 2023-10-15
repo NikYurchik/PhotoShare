@@ -2,7 +2,7 @@ import re
 from typing import List, Optional
 
 from fastapi import HTTPException, status, UploadFile
-from sqlalchemy import insert, select, update, delete, desc
+from sqlalchemy import insert, select, update, delete, desc, asc
 from cloudinary.uploader import upload, destroy
 from sqlalchemy.orm import Session
 
@@ -218,8 +218,10 @@ class PhotosRepository:
                 tag_filter = tag_photo_association.c.tag_id == tag_obj.id
                 photos_query = photos_query.join(tag_photo_association).where(tag_filter)
 
-        if order_by == 'date':
+        if order_by == 'newest':
             photos_query = photos_query.order_by(Photo.created_at.desc())
+        elif order_by == 'oldest':
+            photos_query = photos_query.order_by(Photo.created_at.asc())
 
         photos = session.execute(photos_query).scalars().all()
 

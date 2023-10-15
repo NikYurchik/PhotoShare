@@ -35,7 +35,7 @@ async def get_photo_by_user(user_id: int,
 async def search_photos(
         keyword: str = Query(None, description="Keyword to search in photo descriptions"),
         tag: str = Query(None, description="Filter photos by tag"),
-        order_by: str = Query("date", description="Sort order date"),
+        order_by: str = Query("newest", description="Sort order date(newest, or oldest"),
         db: Session = Depends(get_db)):
     photos = await PhotosRepository().search_photos(keyword, tag, order_by, db)
     return photos
