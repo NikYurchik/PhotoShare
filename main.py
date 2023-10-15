@@ -16,7 +16,7 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
-from src.routes import auth, users
+from src.routes import auth, users, photos
 from src.conf.config import settings
 from src.conf import messages
 
@@ -52,6 +52,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
+app.include_router(photos.router, prefix='/api')
 
 
 templates = Jinja2Templates(directory='templates')
@@ -84,7 +85,7 @@ user_agent_ban_list = [r"Python-urllib"]
 #     """
 #     The limit_access_by_ip function is a middleware function that limits access to the API by IP address.
 #         It checks if the request's client host IP address is in ALLOWED_IPS, and if not, returns a 403 Forbidden response.
-    
+
 #     :param request: Request: Get the ip address of the client that is making a request
 #     :param call_next: Callable: Call the next function in the pipeline
 #     :return: A jsonresponse object, which contains the http status code and a message
@@ -106,7 +107,7 @@ user_agent_ban_list = [r"Python-urllib"]
 #     The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
 #         If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
 #         Otherwise, it calls call_next and returns its result.
-    
+
 #     :param request: Request: Access the request object
 #     :param call_next: Callable: Pass the request to the next middleware in line
 #     :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list

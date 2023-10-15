@@ -37,3 +37,50 @@ class TokenModel(BaseModel):
 class RequestEmail(BaseModel):
     email: EmailStr
 
+
+class PhotoModel(BaseModel):
+    user_id: int
+    file_url: str
+    description: str
+    created_at: datetime
+
+
+class PhotoUpdate(BaseModel):
+    description: str
+
+
+class PhotoResponse(PhotoModel):
+    id: int
+    # user_id: int
+    # file_url: str
+    # description: str
+    # created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PhotoURLModel(BaseModel):
+    url: str
+    photo_id: int
+    created_at: datetime
+
+
+class PhotoURLResponse(PhotoURLModel):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class PhotoTransformModel(BaseModel):
+    gravity: str | None = "center"
+    height: str | None = "800"
+    width: str | None = "800"
+    crop: str | None = "fill"
+    radius: str | None = "0"
+    effect: str | None = None
+    quality: str | None = "auto"
+    fetch_format: str | None = None
+    # fetch_format: str | None = "png"
+
