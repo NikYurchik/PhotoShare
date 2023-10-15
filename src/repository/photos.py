@@ -6,7 +6,7 @@ from sqlalchemy import insert, select, update, delete, desc
 from cloudinary.uploader import upload, destroy
 from sqlalchemy.orm import Session
 
-from src.database.models import Photo, User, tag_photo_association as t2p, Tag, Role
+from src.database.models import Photo, User, tag_photo_association as t2p, Tag, Role, tag_photo_association
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
 
@@ -190,3 +190,39 @@ class PhotosRepository:
             result.append(tag_)
         session.commit()
         return result
+
+    async def search_photos(self, keyword: str, tag: str, order_by: str, session: Session):
+        """
+        Search for photos by keyword or tag and filter the results by rating or date.
+
+        Args:
+            keyword (str): The keyword to search for in photo descriptions.
+            tag (str): The tag to filter photos by.
+            order_by (str): The sorting criteria ('rating' or 'date').
+            session (Session): The database session.
+
+        Returns:
+            List[Photo]: A list of Photo objects that match the search and filter criteria.
+        """
+        photos_query = select(Photo)
+
+        if keyword:
+            keyword_filter = Photo.description.ilike(f"%{keyword}%")
+            photos_query = photos_query.where(keyword_filter)
+
+        if tag:
+            tag_query = select(Tag).where(Tag.name == tag)
+            tag_obj = session.execute(tag_query).scalar_one_or_none()
+
+            if tag_obj:
+                tag_filter = tag_photo_association.c.tag_id == tag_obj.id
+                photos_query = photos_query.join(tag_photo_association).where(tag_filter)
+
+        if order_by == 'date':
+            photos_query = photos_query.order_by(Photo.created_at.desc())
+
+        photos = session.execute(photos_query).scalars().all()
+
+        return photos
+
+
