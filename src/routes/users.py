@@ -13,10 +13,9 @@ from src.services.roles import RoleAccess
 from src.conf import messages
 
 
-allowed_operation_get = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_create = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_update = RoleAccess([Role.admin, Role.moderator])
-allowed_operation_remove = RoleAccess([Role.admin])
+allowed_operation_all = RoleAccess([Role.admin, Role.moderator, Role.user])
+allowed_operation_notuser = RoleAccess([Role.admin, Role.moderator])
+allowed_operation_admin = RoleAccess([Role.admin])
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -24,7 +23,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/",
             response_model=List[UserDbAdmin],
             description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
-            dependencies=[Depends(allowed_operation_update), Depends(RateLimiter(times=10, seconds=60))])
+            dependencies=[Depends(allowed_operation_notuser), Depends(RateLimiter(times=10, seconds=60))])
 async def get_users(limit: int = Query(10, le=50), offset: int = 0, search_mask: str = '', db: Session = Depends(get_db),
                     current_user: User = Depends(auth_service.get_current_user)):
     if not search_mask or search_mask == '*':
@@ -39,7 +38,7 @@ async def get_users(limit: int = Query(10, le=50), offset: int = 0, search_mask:
 @router.get("/{user_id}",
             response_model=UserDbAdmin,
             description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
-            dependencies=[Depends(allowed_operation_update), Depends(RateLimiter(times=10, seconds=60))])
+            dependencies=[Depends(allowed_operation_notuser), Depends(RateLimiter(times=10, seconds=60))])
 async def get_user(user_id: int = Path(ge=1), db: Session = Depends(get_db),
                    current_user: User = Depends(auth_service.get_current_user)):
     user = await repository_users.get_user_by_id(user_id, db)
@@ -51,11 +50,32 @@ async def get_user(user_id: int = Path(ge=1), db: Session = Depends(get_db),
 @router.patch('/toggle_ban/{user_id}',
               response_model=UserDbAdmin,
               description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
-              dependencies=[Depends(allowed_operation_update), Depends(RateLimiter(times=10, seconds=60))])
+              dependencies=[Depends(allowed_operation_notuser), Depends(RateLimiter(times=10, seconds=60))])
 async def toogle_banned_user(user_id: int = Path(ge=1),
                              current_user: User = Depends(auth_service.get_current_user),
                              db: Session = Depends(get_db)):
-    print(f"toggle_ban user_id: {user_id}")
+    # print(f"toggle_ban user_id: {user_id}")
     user = await repository_users.toggle_banned_user(user_id, db)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)
+    elif user.id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
+    return user
+
+
+@router.patch('/set_roles/{user_id}',
+              response_model=UserDbAdmin,
+              description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
+              dependencies=[Depends(allowed_operation_admin), Depends(RateLimiter(times=10, seconds=60))])
+async def set_roles_user(user_id: int = Path(ge=1),
+                         user_roles: str = 'user',
+                         current_user: User = Depends(auth_service.get_current_user),
+                         db: Session = Depends(get_db)):
+    # print(f"toggle_ban user_id: {user_id}")
+    user = await repository_users.set_roles_user(user_id, user_roles, db)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)
+    elif user.id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
     return user
 
