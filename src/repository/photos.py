@@ -2,11 +2,11 @@ import re
 from typing import List, Optional
 
 from fastapi import HTTPException, status, UploadFile
-from sqlalchemy import insert, select, update, delete, desc
+from sqlalchemy import insert, select, update, delete, desc, asc
 from cloudinary.uploader import upload, destroy
 from sqlalchemy.orm import Session
 
-from src.database.models import Photo, User, tag_photo_association as t2p, Tag
+from src.database.models import Photo, User, tag_photo_association as t2p, Tag, Role, tag_photo_association
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
 
@@ -29,8 +29,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If an error occurs during the upload or database operation.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         try:
             uploaded_file = upload(photo.file, folder="upload")
             query = insert(Photo).values(
@@ -39,7 +42,9 @@ class PhotosRepository:
                 user_id=user_id,
             ).returning(Photo)
             new_photo = session.execute(query).scalar_one()
-            tags_list = await self.__add_tags_to_photo(tags, new_photo.id, session)
+            tags_list = []
+            if tags:
+                tags_list = await self.__add_tags_to_photo(tags, new_photo.id, session)
             session.commit()
             return {"photo": new_photo, "tags": tags_list}
         except Exception as e:
@@ -56,8 +61,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found or an error occurs during deletion.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         query = delete(Photo).where(Photo.id == photo_id, Photo.user_id == user_id).returning(Photo)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
@@ -87,8 +95,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         query = select(Photo).where(Photo.id == photo_id, Photo.user_id == user_id)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
@@ -110,8 +121,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         query = (
             update(Photo)
             .where(Photo.id == photo_id, Photo.user_id == user_id)
@@ -176,3 +190,41 @@ class PhotosRepository:
             result.append(tag_)
         session.commit()
         return result
+
+    async def search_photos(self, keyword: str, tag: str, order_by: str, session: Session):
+        """
+        Search for photos by keyword or tag and filter the results by rating or date.
+
+        Args:
+            keyword (str): The keyword to search for in photo descriptions.
+            tag (str): The tag to filter photos by.
+            order_by (str): The sorting criteria ('rating' or 'date').
+            session (Session): The database session.
+
+        Returns:
+            List[Photo]: A list of Photo objects that match the search and filter criteria.
+        """
+        photos_query = select(Photo)
+
+        if keyword:
+            keyword_filter = Photo.description.ilike(f"%{keyword}%")
+            photos_query = photos_query.where(keyword_filter)
+
+        if tag:
+            tag_query = select(Tag).where(Tag.name == tag)
+            tag_obj = session.execute(tag_query).scalar_one_or_none()
+
+            if tag_obj:
+                tag_filter = tag_photo_association.c.tag_id == tag_obj.id
+                photos_query = photos_query.join(tag_photo_association).where(tag_filter)
+
+        if order_by == 'newest':
+            photos_query = photos_query.order_by(Photo.created_at.desc())
+        elif order_by == 'oldest':
+            photos_query = photos_query.order_by(Photo.created_at.asc())
+
+        photos = session.execute(photos_query).scalars().all()
+
+        return photos
+
+
