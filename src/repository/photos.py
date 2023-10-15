@@ -6,7 +6,7 @@ from sqlalchemy import insert, select, update, delete, desc
 from cloudinary.uploader import upload, destroy
 from sqlalchemy.orm import Session
 
-from src.database.models import Photo, User, tag_photo_association as t2p, Tag
+from src.database.models import Photo, User, tag_photo_association as t2p, Tag, Role
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
 
@@ -29,8 +29,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If an error occurs during the upload or database operation.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         try:
             uploaded_file = upload(photo.file, folder="upload")
             query = insert(Photo).values(
@@ -39,7 +42,9 @@ class PhotosRepository:
                 user_id=user_id,
             ).returning(Photo)
             new_photo = session.execute(query).scalar_one()
-            tags_list = await self.__add_tags_to_photo(tags, new_photo.id, session)
+            tags_list = []
+            if tags:
+                tags_list = await self.__add_tags_to_photo(tags, new_photo.id, session)
             session.commit()
             return {"photo": new_photo, "tags": tags_list}
         except Exception as e:
@@ -56,8 +61,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found or an error occurs during deletion.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         query = delete(Photo).where(Photo.id == photo_id, Photo.user_id == user_id).returning(Photo)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
@@ -87,8 +95,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         query = select(Photo).where(Photo.id == photo_id, Photo.user_id == user_id)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
@@ -110,8 +121,11 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found.
         """
-        if user_id is None:
-            user_id = current_user.id
+        if user_id != current_user.id:
+            if not user_id and current_user.roles == Role.admin:
+                user_id = current_user.id
+            else:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
         query = (
             update(Photo)
             .where(Photo.id == photo_id, Photo.user_id == user_id)

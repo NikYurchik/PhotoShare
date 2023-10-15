@@ -12,7 +12,7 @@ from src.services.auth import auth_service
 from src.services.validators import Validator
 from src.services.roles import RoleAccess
 
-allowed_operation = RoleAccess([Role.admin, Role.moderator, Role.user])
+allowed_operation = RoleAccess([Role.admin, Role.user])
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
@@ -33,9 +33,9 @@ async def get_photo_by_user(user_id: int,
 
 
 @router.post('/new', status_code=201, response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
-async def upload_file(user_id: int = None,
+async def upload_file(tags: List[str] = None,
+                      user_id: int = None,
                       photo_description: str = Form(...),
-                      tags: List[str] = JSON(...),
                       photo: UploadFile = File(...),
                       current_user: User = Depends(auth_service.get_current_user),
                       db: Session = Depends(get_db)):
