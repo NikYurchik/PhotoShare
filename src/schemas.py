@@ -82,5 +82,4 @@ class PhotoTransformModel(BaseModel):
     effect: str | None = None
     quality: str | None = "auto"
     fetch_format: str | None = None
-    # fetch_format: str | None = "png"
 
