@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 
 from src.database.db import get_db
 from src.schemas import CommentModel, CommentUpdate, CommentDelete, CommentResponse
+from src.conf import messages
 from src.repository import comments as repository_comments
 from src.database.models import Comment, User, Photo
 from src.services.auth import auth_service
 
 
-# router = APIRouter(prefix='/photos/{photo_id}/comments', tags=['comments'])
 router = APIRouter(prefix='/comments', tags=['comments'])
 
 
@@ -21,7 +21,7 @@ async def get_comments(photo_id: int, db: Session = Depends(get_db)):
 
     if len(comments) == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Contacts not found")
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)
 
     return comments
 
@@ -45,7 +45,7 @@ async def update_comment(body: CommentUpdate,
     comment = await repository_comments.update_comment(body, user, db)
 
     if comment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)
 
     return comment
 
@@ -58,6 +58,6 @@ async def delete_comment(body: CommentDelete,
     comment = await repository_comments.delete_comment(body, user, db)
 
     if comment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)
 
     return comment

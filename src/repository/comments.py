@@ -4,6 +4,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from src.database.models import Comment, User, Photo, Role
+from src.conf import messages
 from src.schemas import CommentModel, CommentUpdate, CommentDelete
 from src.repository.photos import get_photo_by_id
 
@@ -40,7 +41,7 @@ async def update_comment(body: CommentUpdate, user: User, db: Session) -> Commen
             comment.text = body.text
             db.commit()
         else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this comment")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
 
     return comment
 
@@ -54,6 +55,6 @@ async def delete_comment(body: CommentDelete, user: User, db: Session) -> Commen
             db.delete(comment)
             db.commit()
         else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can't delete this comment")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
 
     return comment
