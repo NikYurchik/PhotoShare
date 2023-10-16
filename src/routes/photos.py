@@ -1,7 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, UploadFile, File, Form
-from sqlalchemy import JSON
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
@@ -12,7 +11,7 @@ from src.services.auth import auth_service
 from src.services.validators import Validator
 from src.services.roles import RoleAccess
 
-allowed_operation = RoleAccess([Role.admin, Role.moderator, Role.user])
+allowed_operation = RoleAccess([Role.admin, Role.user])
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
@@ -32,10 +31,20 @@ async def get_photo_by_user(user_id: int,
     return await PhotosRepository().get_photos_by_user(user_id, page, per_page, db)
 
 
+@router.get('/search', response_model=List[PhotoSchema])
+async def search_photos(
+        keyword: str = Query(None, description="Keyword to search in photo descriptions"),
+        tag: str = Query(None, description="Filter photos by tag"),
+        order_by: str = Query("newest", description="Sort order date(newest, or oldest"),
+        db: Session = Depends(get_db)):
+    photos = await PhotosRepository().search_photos(keyword, tag, order_by, db)
+    return photos
+
+
 @router.post('/new', status_code=201, response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
-async def upload_file(user_id: int = None,
+async def upload_file(tags: List[str] = None,
+                      user_id: int = None,
                       photo_description: str = Form(...),
-                      tags: List[str] = JSON(...),
                       photo: UploadFile = File(...),
                       current_user: User = Depends(auth_service.get_current_user),
                       db: Session = Depends(get_db)):
@@ -66,3 +75,5 @@ async def get_photo_by_id(photo_id: int,
                           current_user: User = Depends(auth_service.get_current_user),
                           db: Session = Depends(get_db)):
     return await PhotosRepository().get_photo_by_id(user_id, photo_id, current_user, db)
+
+
