@@ -45,7 +45,6 @@ class CommentModel(BaseModel):
 class CommentUpdate(BaseModel):
     id: int
     text: str
-    # updated_at: datetime
 
 
 class CommentDelete(BaseModel):
@@ -54,8 +53,6 @@ class CommentDelete(BaseModel):
 
 class CommentResponse(BaseModel):
     id: int
-    # user_id: int
-    # photo_id: int
     text: str
 
     class Config:
