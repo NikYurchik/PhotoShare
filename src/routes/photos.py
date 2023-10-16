@@ -39,15 +39,15 @@ async def photo_transform(body: PhotoTransformModel, photo_id: int,
 
     if body.effect is None:
         url_changed_photo = cloudinary.CloudinaryImage(f"{photo.file_url}").build_url(transformation=[
-            {'gravity': body.gravity, 'height': int(body.height), 'width': int(body.width), 'crop': body.crop},
-            {'radius': int(body.radius)},
+            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
+            {'radius': body.radius},
             {'quality': body.quality},
             {'fetch_format': body.fetch_format if body.fetch_format else re.search("\w+$", photo.file_url).group(0)}
         ])
     else:
         url_changed_photo = cloudinary.CloudinaryImage(f"{photo.file_url}").build_url(transformation=[
-            {'gravity': body.gravity, 'height': int(body.height), 'width': int(body.width), 'crop': body.crop},
-            {'radius': int(body.radius)},
+            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
+            {'radius': body.radius},
             {'effect': body.effect},
             {'quality': body.quality},
             {'fetch_format': body.fetch_format if body.fetch_format else re.search("\w+$", photo.file_url).group(0)}
