@@ -3,12 +3,14 @@ from typing import List, Optional
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import insert, select, update, delete, desc
-from cloudinary.uploader import upload, destroy
+# from cloudinary.uploader import upload, destroy
+from cloudinary import uploader
 from sqlalchemy.orm import Session
 
-from src.database.models import Photo, User, tag_photo_association as t2p, Tag
+from src.database.models import Role, Photo, User, tag_photo_association as t2p, Tag
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
+from src.conf import messages
 
 
 class PhotosRepository:
@@ -31,8 +33,10 @@ class PhotosRepository:
         """
         if user_id is None:
             user_id = current_user.id
+        elif user_id != current_user.id and current_user.roles != Role.admin:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
         try:
-            uploaded_file = upload(photo.file, folder="upload")
+            uploaded_file = uploader.upload(photo.file, folder="upload")
             query = insert(Photo).values(
                 description=photo_description,
                 file_url=uploaded_file["secure_url"],
@@ -58,20 +62,25 @@ class PhotosRepository:
         """
         if user_id is None:
             user_id = current_user.id
+        elif user_id != current_user.id and current_user.roles != Role.admin:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+        
         query = delete(Photo).where(Photo.id == photo_id, Photo.user_id == user_id).returning(Photo)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Photo not found")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
 
         photo_url = photo.file_url
         pattern = r"/v\d+/(.*?)\."
         match = re.search(pattern, photo_url)
         public_id = match.group(1)
 
-        result = destroy(public_id)
+        result = uploader.destroy(public_id)
         if result.get('result') != 'ok':
-            return HTTPException(status.HTTP_400_BAD_REQUEST, detail=result.get('message'))
+            session.rollback()
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result.get('message'))
         session.commit()
+
 
     async def get_photo_by_id(self, user_id: int | None, photo_id: int,
                               current_user: User, session: Session) -> Optional[Photo]:
@@ -112,6 +121,8 @@ class PhotosRepository:
         """
         if user_id is None:
             user_id = current_user.id
+        elif user_id != current_user.id and current_user.roles != Role.admin:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
         query = (
             update(Photo)
             .where(Photo.id == photo_id, Photo.user_id == user_id)
