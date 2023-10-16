@@ -16,7 +16,7 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
-from src.routes import auth, users
+from src.routes import auth, users, comments
 from src.conf.config import settings
 from src.conf import messages
 
@@ -52,6 +52,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
+app.include_router(comments.router, prefix='/api')
 
 
 templates = Jinja2Templates(directory='templates')

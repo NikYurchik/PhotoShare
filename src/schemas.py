@@ -37,3 +37,28 @@ class TokenModel(BaseModel):
 class RequestEmail(BaseModel):
     email: EmailStr
 
+
+class CommentModel(BaseModel):
+    text: str
+
+
+class CommentUpdate(BaseModel):
+    id: int
+    text: str
+    # updated_at: datetime
+
+
+class CommentDelete(BaseModel):
+    id: int
+
+
+class CommentResponse(BaseModel):
+    id: int
+    # user_id: int
+    # photo_id: int
+    text: str
+
+    class Config:
+        from_attributes = True
+
+
