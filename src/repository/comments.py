@@ -3,7 +3,7 @@ from typing import List
 # from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from src.database.models import Comment, User, Photo
+from src.database.models import Comment, User, Photo, Role
 from src.schemas import CommentModel, CommentUpdate, CommentDelete
 from src.repository.photos import get_photo_by_id
 
@@ -50,7 +50,7 @@ async def delete_comment(body: CommentDelete, user: User, db: Session) -> Commen
     comment = db.query(Comment).filter(Comment.id == body.id).first()
 
     if comment:
-        if user.roles == "admin" or user.roles == "moderator":
+        if user.roles == Role.admin or user.roles == Role.moderator:
             db.delete(comment)
             db.commit()
         else:
