@@ -27,26 +27,29 @@ def upgrade() -> None:
     sa.Column('username', sa.String(length=50), nullable=True),
     sa.Column('email', sa.String(length=250), nullable=False),
     sa.Column('password', sa.String(length=255), nullable=False),
-    sa.Column('crated_at', sa.DateTime(), nullable=True),
+    sa.Column('crated_at', sa.DateTime(), nullable=True, default=datetime.now()),
     sa.Column('avatar', sa.String(length=255), nullable=True),
     sa.Column('refresh_token', sa.String(length=255), nullable=True),
     sa.Column('confirmed', sa.Boolean(), nullable=True),
     sa.Column('roles', sa.Enum('admin', 'moderator', 'user', name='role'), nullable=True),
+    sa.Column('is_banned', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
-
+    crated_at = sa.func.now()
     op.bulk_insert(
         users,
         [
             {
-                "id": 1,
+                # "id": 1,
                 "username": "admin",
                 "email": "admin@email.com",
-                "crated_at": datetime.now(),
                 "password": auth_service.get_password_hash("admin"),
+                "crated_at": crated_at,
+                # "avatar": "",
                 "confirmed": True,
                 "roles": "admin",
+                "is_banned": False,
             },
         ],
         multiinsert=False,

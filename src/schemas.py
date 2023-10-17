@@ -1,6 +1,8 @@
+from typing import Optional
 from datetime import datetime, date
+from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator, constr
 
 from src.database.models import Role
 
@@ -15,13 +17,19 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: EmailStr
-    created_at: datetime
-    avatar: str
+    created_at: Optional[datetime] = datetime.now()
+    # created_at: datetime = datetime.now()
+    avatar: Optional[str] = None
+    # avatar: str = None
     roles: Role
 
     class Config:
         from_attributes = True
 
+
+class UserDbAdmin(UserDb):
+    confirmed: bool
+    is_banned: bool
 
 class UserResponse(BaseModel):
     user: UserDb
@@ -38,24 +46,25 @@ class RequestEmail(BaseModel):
     email: EmailStr
 
 
-class CommentModel(BaseModel):
-    text: str
-
-
-class CommentUpdate(BaseModel):
+class PhotoSchema(BaseModel):
     id: int
-    text: str
+    file_url: str
+    description: str
+    created_at: datetime
+    user_id: int
 
 
-class CommentDelete(BaseModel):
+class PhotoUpdateModel(BaseModel):
+    description: str
+
+
+class TagDetail(BaseModel):
     id: int
+    name: str
 
 
-class CommentResponse(BaseModel):
-    id: int
-    text: str
-
-    class Config:
-        from_attributes = True
+class PhotoResponse(BaseModel):
+    photo: PhotoSchema
+    tags: List[TagDetail]
 
 

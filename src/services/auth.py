@@ -146,7 +146,6 @@ class Auth:
             raise credentials_exception
 
         user = self.r.get(f"user:{email}")
-        # user = None
         if user is None:
             user = await repository_users.get_user_by_email(email, db)
             if user is None:
