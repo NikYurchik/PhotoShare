@@ -11,3 +11,4 @@ postgres-data
 test.db
 *.tst
 src/conf/config.py
+.gitignore
