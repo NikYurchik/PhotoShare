@@ -1,6 +1,4 @@
 from typing import List
-
-# from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from src.database.models import Comment, User, Photo, Role
@@ -46,15 +44,12 @@ async def update_comment(body: CommentUpdate, user: User, db: Session) -> Commen
     return comment
 
 
-async def delete_comment(body: CommentDelete, user: User, db: Session) -> Comment | None:
+async def delete_comment(body: CommentDelete, db: Session) -> Comment | None:
     """Docstring"""
     comment = db.query(Comment).filter(Comment.id == body.id).first()
 
     if comment:
-        if user.roles == Role.admin or user.roles == Role.moderator:
-            db.delete(comment)
-            db.commit()
-        else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
+        db.delete(comment)
+        db.commit()
 
     return comment

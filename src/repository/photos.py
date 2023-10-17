@@ -1,5 +1,6 @@
 import re
 from typing import List, Optional
+from sqlalchemy.orm import Session
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import insert, select, update, delete, desc, asc
@@ -7,7 +8,7 @@ from sqlalchemy import insert, select, update, delete, desc, asc
 from cloudinary import uploader
 from sqlalchemy.orm import Session
 
-from src.database.models import Role, Photo, User, tag_photo_association as t2p, Tag, tag_photo_association
+from src.database.models import Role, Photo, User, PhotoURL, tag_photo_association as t2p, Tag, tag_photo_association
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
 from src.conf import messages
@@ -230,3 +231,18 @@ class PhotosRepository:
         return photos
 
 
+async def photo_transform(url_changed_photo: str, photo: Photo, db: Session) -> Photo:
+    """Docstring"""
+    new_photo = PhotoURL(url=url_changed_photo, photo=photo)
+    db.add(new_photo)
+    db.commit()
+    db.refresh(new_photo)
+
+    return new_photo
+
+
+async def get_photo_by_id(photo_id, db) -> Photo:
+    """Docstring"""
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+
+    return photo

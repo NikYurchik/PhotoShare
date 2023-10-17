@@ -16,7 +16,7 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
-from src.routes import auth, users, myuser, photos
+from src.routes import auth, users, myuser, photos, comments
 # from src.repository.users import check_user_admin
 from src.conf.config import settings
 from src.conf import messages
@@ -56,7 +56,7 @@ app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(photos.router, prefix='/api')
 app.include_router(myuser.router, prefix='/api')
-
+app.include_router(comments.router, prefix='/api')
 
 templates = Jinja2Templates(directory='templates')
 BASE_DIR = pathlib.Path(__file__).parent
