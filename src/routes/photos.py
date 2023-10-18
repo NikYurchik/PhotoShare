@@ -1,87 +1,110 @@
-import cloudinary
-import re
-import qrcode
-
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
 from src.database.db import get_db
 from src.database.models import User, Photo, PhotoURL, Role
-from src.repository import photos as repository_photo
+from src.repository import PhotosRepository
 from src.services.auth import auth_service
-from src.schemas import PhotoResponse, PhotoTransformModel
-from src.conf.config import settings
+from src.services.roles import RoleAccess
+from src.schemas import PhotoResponse, PhotoTransformModel, PhotoQRCodeModel
 from src.conf import messages
+
+
+allowed_operation_all = RoleAccess([Role.admin, Role.moderator, Role.user])
+allowed_operation_notuser = RoleAccess([Role.admin, Role.moderator])
+allowed_operation_admin = RoleAccess([Role.admin])
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
 
-@router.post("/transform/{photo_id})", response_model=PhotoResponse)
+@router.post("/transform/{photo_id}",
+             response_model=PhotoResponse,
+             description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
+             dependencies=[Depends(allowed_operation_all), Depends(RateLimiter(times=10, seconds=60))])
 async def photo_transform(body: PhotoTransformModel, photo_id: int,
                           user: User = Depends(auth_service.get_current_user), db: Session = Depends(get_db)):
 
-    if user.roles == Role.admin:
-        photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    base_photo = db.query(Photo).filter(Photo.id == photo_id).first()
+
+    if base_photo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
+
+    if user.roles != Role.admin and base_photo.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+
+    if body.transform_photo_id:
+        try:
+            transform_photo_id = int(body.transform_photo_id)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Invalid value of the 'transform_photo_id' parameter: "
+                                       f"'{body.transform_photo_id}'. It must have a numeric value.")
+
+        photo = db.query(PhotoURL).filter(and_(PhotoURL.photo_id == photo_id,
+                                               PhotoURL.id == transform_photo_id)).first()
+
+        if photo is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
     else:
-        if Photo.user_id == user.id:
-            photo = db.query(Photo).filter(and_(Photo.id == photo_id, Photo.user_id == user.id)).first()
-        else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+        photo = base_photo
+
+    return await PhotosRepository().upload_transform_photo(body, base_photo, photo, db)
+
+
+@router.post("/qrcode/{photo_id}",
+             response_model=PhotoResponse,
+             description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
+             dependencies=[Depends(allowed_operation_all), Depends(RateLimiter(times=10, seconds=60))])
+async def create_qrcode(body: PhotoQRCodeModel, photo_id: int,
+                        user: User = Depends(auth_service.get_current_user), db: Session = Depends(get_db)):
+
+    base_photo = db.query(Photo).filter(Photo.id == photo_id).first()
+
+    if base_photo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
+
+    if user.roles == Role.user and base_photo.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+
+    if body.transform_photo_id:
+        try:
+            transform_photo_id = int(body.transform_photo_id)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Invalid value of the 'transform_photo_id' parameter: "
+                                       f"'{body.transform_photo_id}'. It must have a numeric value.")
+
+        photo = db.query(PhotoURL).filter(and_(PhotoURL.photo_id == photo_id,
+                                               PhotoURL.id == transform_photo_id)).first()
+
+        if photo is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
+    else:
+        photo = base_photo
+
+    return await PhotosRepository().update_photo_qr_url(body, photo, db)
+
+
+@router.delete("/del_tr_photo/{transform_photo_id}",
+               description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
+               dependencies=[Depends(allowed_operation_all), Depends(RateLimiter(times=10, seconds=60))])
+async def delete_transform_photo(transform_photo_id: int,
+                                 user: User = Depends(auth_service.get_current_user), db: Session = Depends(get_db)):
+
+    photo = db.query(PhotoURL).filter(PhotoURL.id == transform_photo_id).first()
 
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
 
-    cloudinary.config(cloud_name=settings.cloudinary_name,
-                      api_key=settings.cloudinary_api_key,
-                      api_secret=settings.cloudinary_api_secret,
-                      secure=True)
+    base_photo = db.query(Photo).filter(Photo.id == photo.photo_id).first()
 
-    if body.effect is None:
-        url_changed_photo = cloudinary.CloudinaryImage(f"{photo.file_url}").build_url(transformation=[
-            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
-            {'radius': body.radius},
-            {'quality': body.quality},
-            {'fetch_format': body.fetch_format if body.fetch_format else re.search("\w+$", photo.file_url).group(0)}
-        ])
-    else:
-        url_changed_photo = cloudinary.CloudinaryImage(f"{photo.file_url}").build_url(transformation=[
-            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
-            {'radius': body.radius},
-            {'effect': body.effect},
-            {'quality': body.quality},
-            {'fetch_format': body.fetch_format if body.fetch_format else re.search("\w+$", photo.file_url).group(0)}
-        ])
+    if base_photo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
 
-    return await repository_photo.photo_transform(url_changed_photo, photo, db)
+    if user.roles == Role.user and base_photo.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
+    return await PhotosRepository().delete_transform_photo(photo, db)
 
-# @router.post("/qrcode/{photo_id}/{photo_url_id})", response_model=PhotoResponse)
-# async def photo_transform(photo_id: int, photo_url_id: int | None = None,
-#                           user: User = Depends(auth_service.get_current_user), db: Session = Depends(get_db)):
-#
-#     if user.roles == Role.admin:
-#         photo = db.query(Photo).filter(Photo.id == photo_id).first()
-#     else:
-#         if Photo.user_id == user.id:
-#             photo = db.query(Photo).filter(and_(Photo.id == photo_id, Photo.user_id == user.id)).first()
-#         else:
-#             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
-#
-#     if photo is None:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
-#
-#     if photo_url_id is None:
-#         qr_url_photo = photo.file_url
-#     else:
-#         photo_url = db.query(PhotoURL).filter(and_(PhotoURL.photo_id == photo_id, PhotoURL.id == photo_url_id)).first()
-#         qr_url_photo = photo_url.url
-#
-#     qr = qrcode.QRCode()
-#
-#     qr.add_data(qr_url_photo)
-#
-#     img = qr.make_image()
-#     # img.save("some_file.png")
-#
-#     return await repository_photo.qrcode_for_photo(img, photo, db)

@@ -39,6 +39,7 @@ class Photo(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
     file_url = Column(String(255), nullable=False, unique=True)
+    qr_url = Column(String(255), nullable=True, unique=True)
     description = Column(String(255), nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
@@ -54,7 +55,8 @@ class Tag(Base):
 class PhotoURL(Base):
     __tablename__ = "photo_urls"
     id = Column(Integer, primary_key=True)
-    url = Column(String(255), nullable=False, unique=True)
+    file_url = Column(String(255), nullable=False, unique=True)
+    qr_url = Column(String(255), nullable=True, unique=True)
     photo_id = Column(Integer, ForeignKey("photos.id", ondelete='CASCADE'))
     created_at = Column('created_at', DateTime, default=func.now())
     photo = relationship('Photo', backref='photo_urls')

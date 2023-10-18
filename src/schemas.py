@@ -46,6 +46,7 @@ class PhotoModel(BaseModel):
 
 
 class PhotoUpdate(BaseModel):
+    qr_url: str
     description: str
 
 
@@ -61,9 +62,13 @@ class PhotoResponse(PhotoModel):
 
 
 class PhotoURLModel(BaseModel):
-    url: str
+    file_url: str
     photo_id: int
     created_at: datetime
+
+
+class PhotoURLUpdate(BaseModel):
+    qr_url: str
 
 
 class PhotoURLResponse(PhotoURLModel):
@@ -74,6 +79,7 @@ class PhotoURLResponse(PhotoURLModel):
 
 
 class PhotoTransformModel(BaseModel):
+    transform_photo_id: str | None = None
     gravity: str | None = "center"
     height: str | None = "800"
     width: str | None = "800"
@@ -82,4 +88,10 @@ class PhotoTransformModel(BaseModel):
     effect: str | None = None
     quality: str | None = "auto"
     fetch_format: str | None = None
+
+
+class PhotoQRCodeModel(BaseModel):
+    transform_photo_id: str | None = None
+    fill_color: str | None = "black"
+    back_color: str | None = "white"
 
