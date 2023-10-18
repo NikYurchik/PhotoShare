@@ -3,7 +3,7 @@ import re
 from typing import Callable
 import pathlib
 
-import redis.asyncio as redis
+# import redis.asyncio as redis
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -11,30 +11,31 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
+# from fastapi_limiter import FastAPILimiter
+# from fastapi_limiter.depends import RateLimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
 from src.routes import auth, users, myuser, photos, comments
-# from src.repository.users import check_user_admin
-from src.conf.config import settings
+# from src.conf.config import settings, BASE_DIR
+from src.conf.config import BASE_DIR
 from src.conf import messages
+from src.services.custom_limiter import RateLimiter
 
 app = FastAPI()
 
 
-@app.on_event("startup")
-async def startup():
-    """
-    The startup function is called when the application starts up.
-        It's a good place to initialize things that are needed by your app, like database connections or caches.
+# @app.on_event("startup")
+# async def startup():
+#     """
+#     The startup function is called when the application starts up.
+#         It's a good place to initialize things that are needed by your app, like database connections or caches.
     
-    :return: A redis connection pool
-    """
-    # await check_user_admin()
-    r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
-    await FastAPILimiter.init(r)
+#     :return: A redis connection pool
+#     """
+#     # await check_user_admin()
+#     r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
+#     await FastAPILimiter.init(r)
 
 
 origins = [ 

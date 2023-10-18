@@ -42,14 +42,15 @@ async def search_photos(
 
 
 @router.post('/new', status_code=201, response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
-async def upload_file(tags: List[str] = None,
+async def upload_photo(tags_str: str = None,
+                      tags: List[str] = None,
                       user_id: int = None,
                       photo_description: str = Form(...),
                       photo: UploadFile = File(...),
                       current_user: User = Depends(auth_service.get_current_user),
                       db: Session = Depends(get_db)):
-    await Validator().validate_tags_count(tags)
-    return await PhotosRepository().upload_new_photo(user_id, photo_description, tags, photo, current_user, db)
+    tags_list = await Validator().validate_tags_count(tags_str, tags)
+    return await PhotosRepository().upload_new_photo(user_id, photo_description, tags_list, photo, current_user, db)
 
 
 @router.put('/{photo_id}', response_model=PhotoSchema, dependencies=[Depends(allowed_operation)])

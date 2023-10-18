@@ -2,10 +2,12 @@ from typing import List
 
 from fastapi import HTTPException, status
 
+from src.conf import messages
+from src.conf.config import MAX_TAGS_COUNT
 
 class Validator:
 
-    async def validate_tags_count(self, tags_str: List[str]) -> None:
+    async def validate_tags_count(self, tags_str: str, tags: List[str]) -> List[str]:
         """
         Validate the number of tags in the provided list
         Args:
@@ -15,12 +17,16 @@ class Validator:
         Returns:
             None
         """
-        max_tags_count = 5
-        if tags_str:
-            tags = tags_str[0].split(',')
-            if len(tags) > max_tags_count:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"You can add a maximum of {max_tags_count} tags."
-                )
+        tags_list = []
 
+        if tags_str:
+            tags_ = tags_str.replace(" ", "").split(",")
+            tags_list.extend(tags_)
+
+        if tags:
+            tags_list.extend(tags)
+
+        if len(tags_list) > MAX_TAGS_COUNT:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.MAXIMUM_TAGS_COUNT)
+
+        return tags_list

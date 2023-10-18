@@ -85,8 +85,7 @@ class PhotosRepository:
         session.commit()
 
 
-    async def get_photo_by_id(self, user_id: int | None, photo_id: int,
-                              current_user: User, session: Session) -> Optional[Photo]:
+    async def get_photo_by_id(self, photo_id: int, current_user: User, session: Session) -> Optional[Photo]:
         """
         Retrieve a photo with the given photo_id associated with the user
         Args:
@@ -99,15 +98,10 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found.
         """
-        if user_id != current_user.id:
-            if not user_id and current_user.roles == Role.admin:
-                user_id = current_user.id
-            else:
-                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unauthorized, or user is not admin")
-        query = select(Photo).where(Photo.id == photo_id, Photo.user_id == user_id)
+        query = select(Photo).where(Photo.id == photo_id)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Photo not found")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
         return photo
 
     async def update_photo_description(self, user_id: int | None, photo_id: int, body: PhotoUpdateModel,
@@ -174,7 +168,7 @@ class PhotosRepository:
         photos = session.execute(query).scalars().all()
         return photos
 
-    async def __add_tags_to_photo(self, tags_str: List[str], photo_id: int, session: Session) -> List[Tag]:
+    async def __add_tags_to_photo(self, tags_str: str, photo_id: int, session: Session) -> List[Tag]:
         """
         Add tags to a photo
         Args:
@@ -185,7 +179,7 @@ class PhotosRepository:
             List[Tag]: The list of tags added to the photo
         """
         result = []
-        tags = tags_str[0].split(',')
+        tags = tags_str.split(',')
         for tag in tags:
             tag_ = await TagRepository().check_tag_exist_or_create(tag, session)
             query = insert(t2p).values(tag_id=tag_.id, photo_id=photo_id).returning(t2p)

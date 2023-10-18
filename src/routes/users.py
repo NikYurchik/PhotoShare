@@ -1,7 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
-from fastapi_limiter.depends import RateLimiter
+# from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
@@ -11,6 +11,7 @@ from src.services.auth import auth_service
 from src.schemas import UserDbAdmin
 from src.services.roles import RoleAccess
 from src.conf import messages
+from src.services.custom_limiter import RateLimiter
 
 
 allowed_operation_all = RoleAccess([Role.admin, Role.moderator, Role.user])

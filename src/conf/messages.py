@@ -1,3 +1,5 @@
+from src.conf.config import MAX_TAGS_COUNT
+
 INVALID_SCOPE_FOR_TOKEN = "Invalid scope for token"
 COULD_NOT_VALIDATE_CREDENTIALS = "Could not validate credentials"
 INVALID_TOKEN_FOR_EMAIL_VERIFICATION = "Invalid token for email verification"
@@ -14,6 +16,7 @@ EMAIL_CONFIRMED = "Email confirmed"
 CHECK_YOUR_EMAIL_FOR_CONFIRMATION = "Check your email for confirmation"
 OPERATION_NOT_AVAILABLE = "Operation is not available"
 PHOTO_NOT_FOUND = "Photo not found"
+MAXIMUM_TAGS_COUNT=f"You can add a maximum of {MAX_TAGS_COUNT} tags"
 
 NO_MORE_THAN_10_REQUESTS_PER_MINUTE = "No more than 10 requests per minute"
 NOT_FOUND = "Not Found"
