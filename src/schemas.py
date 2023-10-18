@@ -63,8 +63,11 @@ class TagDetail(BaseModel):
     name: str
 
 
-class PhotoResponse(BaseModel):
-    photo: PhotoSchema
+# class PhotoResponse(BaseModel):
+#     photo: PhotoSchema
+#     tags: List[TagDetail]
+
+class PhotoResponse(PhotoSchema):
     tags: List[TagDetail]
 
 

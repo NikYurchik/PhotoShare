@@ -57,6 +57,44 @@ def user():
             }
 
 
+@pytest.fixture(scope="module")
+def photo():
+    return {"user_id": "1",
+            "file_url": "https://gravatar.com/image.png",
+            "description": "Test photo",
+            "tag_str": "tag1, tag2",
+            "tags": ["tags1", "tags2"]
+            }
+            # {
+            #     "photo": {
+            #         "id": 1,
+            #         "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697427418/upload/vplnv9bplyylkvyomdgd.jpg",
+            #         "description": "photo_description",
+            #         "user_id": "1"
+            #     },
+            #     "tags": [
+            #         {
+            #             "name": "tags1"
+            #         },
+            #         {
+            #             "name": "tags2"
+            #         }
+            #     ]
+            # }
+
+@pytest.fixture(scope="module")
+def photos():
+    return [
+                {"user_id": "1",
+                "file_url": "https://gravatar.com/image.png",
+                "description": "Test photo"
+                },
+                {"user_id": "1",
+                "file_url": "https://gravatar.com/image.png",
+                "description": "Test photo2"
+                }
+            ]
+
 # @pytest.fixture
 # def log(request):
 #     if not os.path.exists("logs"):

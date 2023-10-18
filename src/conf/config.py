@@ -1,5 +1,8 @@
 from pydantic_settings import BaseSettings
 
+MAX_TAGS_COUNT = 5
+BASE_DIR = "."
+
 class Settings(BaseSettings):
     postgres_db: str = 'example'
     postgres_user: str = 'db_user'

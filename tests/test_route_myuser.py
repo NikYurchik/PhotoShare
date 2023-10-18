@@ -22,12 +22,12 @@ def token(client, user, session, monkeypatch):
 
 
 def test_read_myuser_me(client, token, user, monkeypatch):
-    with patch.object(auth_service, "r") as redis_mock:
-        redis_mock.get.return_value = None
-        monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-        monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-        monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-        monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
+    # with patch.object(auth_service, "r") as redis_mock:
+    #     redis_mock.get.return_value = None
+    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
+    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
+    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
+    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
 
         response = client.get("/api/myuser/me/",
                               headers={"Authorization": f"Bearer {token}"})
@@ -40,13 +40,13 @@ def test_read_myuser_me(client, token, user, monkeypatch):
 
 def test_update_avatar_user(client, token, user, monkeypatch):
     USER_AVATAR = "http://cloudimage.com/image.png"
-    with patch.object(auth_service, "r") as redis_mock:
-        redis_mock.get.return_value = None
-        monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-        monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-        monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-        monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
-
+    # with patch.object(auth_service, "r") as redis_mock:
+    #     redis_mock.get.return_value = None
+    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
+    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
+    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
+    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
+    if True:
         monkeypatch.setattr('src.services.cloud_image.CloudImage.generate_name_avatar', MagicMock())
         monkeypatch.setattr('src.services.cloud_image.CloudImage.upload', MagicMock())
         monkeypatch.setattr('src.services.cloud_image.CloudImage.get_url_for_avatar', MagicMock(return_value=USER_AVATAR))
