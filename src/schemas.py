@@ -71,3 +71,24 @@ class PhotoResponse(PhotoSchema):
     tags: List[TagDetail]
 
 
+class CommentModel(BaseModel):
+    text: str
+
+
+class CommentUpdate(BaseModel):
+    id: int
+    text: str
+
+
+class CommentDelete(BaseModel):
+    id: int
+
+
+class CommentResponse(BaseModel):
+    id: int
+    text: str
+
+    class Config:
+        from_attributes = True
+
+
