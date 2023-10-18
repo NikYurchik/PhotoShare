@@ -57,7 +57,7 @@ class PhotoURL(Base):
     url = Column(String, nullable=False, unique=True)
     photo_id = Column(Integer, ForeignKey("photos.id", ondelete='CASCADE'))
     created_at = Column('created_at', DateTime, default=func.now())
-    photo = relationship('Photo', backref='urls')
+    photo = relationship('Photo', backref='photo_urls')
 
 
 class Comment(Base):
