@@ -6,14 +6,6 @@ from sqlalchemy.sql.schema import ForeignKey, Table
 
 Base = declarative_base()
 
-tag_photo_association = Table(
-    'tag_m2m_photo',
-    Base.metadata,
-    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
-    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
-)
-
-
 class Role(enum.Enum):
     admin: str = 'admin'
     moderator: str = 'moderator'
@@ -49,6 +41,22 @@ class Tag(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
+
+
+tag_photo_association = Table(
+    'tag_m2m_photo',
+    Base.metadata,
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
+    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
+)
+
+# class Tag2Photo(Base):
+#     __tablename__ = "tag_m2m_photo"
+#     id = Column(Integer, primary_key=True)
+#     tag_id = Column(Integer, ForeignKey('tags.id', ondelete='CASCADE'))
+#     photo_id = Column(Integer, ForeignKey('photos.id', ondelete='CASCADE'))
+#     tag = relationship('Tag', backref='tags')
+#     photo = relationship('Photo', backref='photos')
 
 
 class PhotoURL(Base):

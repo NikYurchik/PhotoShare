@@ -16,22 +16,24 @@ allowed_operation = RoleAccess([Role.admin, Role.user])
 router = APIRouter(prefix="/photos", tags=["photos"])
 
 
-@router.get('/all-photos', response_model=List[PhotoSchema])
+# @router.get('/all-photos', response_model=List[PhotoResponse])
+@router.get('/all', response_model=List[PhotoResponse])
 async def get_all_photos(page: int = 1,
                          per_page: int = 10,
                          db: Session = Depends(get_db)):
     return await PhotosRepository().get_all_photos(page, per_page, db)
 
 
-@router.get('/user-photos/{user_id}', response_model=List[PhotoSchema])
+@router.get('/user/{user_id}', response_model=List[PhotoResponse])
 async def get_photo_by_user(user_id: int,
                             page: int = 1,
                             per_page: int = 10,
+                            current_user: User = Depends(auth_service.get_current_user),
                             db: Session = Depends(get_db)):
-    return await PhotosRepository().get_photos_by_user(user_id, page, per_page, db)
+    return await PhotosRepository().get_photos_by_user(user_id, current_user, page, per_page, db)
 
 
-@router.get('/search', response_model=List[PhotoSchema])
+@router.get('/search', response_model=List[PhotoResponse])
 async def search_photos(
         keyword: str = Query(None, description="Keyword to search in photo descriptions"),
         tag: str = Query(None, description="Filter photos by tag"),
@@ -42,15 +44,15 @@ async def search_photos(
 
 
 @router.post('/new', status_code=201, response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
-async def upload_photo(tags_str: str = None,
-                      tags: List[str] = None,
-                      user_id: int = None,
-                      photo_description: str = Form(...),
-                      photo: UploadFile = File(...),
-                      current_user: User = Depends(auth_service.get_current_user),
-                      db: Session = Depends(get_db)):
-    tags_list = await Validator().validate_tags_count(tags_str, tags)
-    return await PhotosRepository().upload_new_photo(user_id, photo_description, tags_list, photo, current_user, db)
+async def upload_photo(photo: UploadFile = File(...),
+                       photo_description: str = Form(...),
+                       tags: str = Query(None, description="Tags string separated by commas"),
+                       current_user: User = Depends(auth_service.get_current_user),
+                       db: Session = Depends(get_db)):
+    tags_list = await Validator().validate_tags_count(tags)
+    print(f"tags: {tags}")
+    print(f"tags_list: {tags_list}")
+    return await PhotosRepository().upload_new_photo(photo_description, tags_list, photo, current_user, db)
 
 
 @router.put('/{photo_id}', response_model=PhotoSchema, dependencies=[Depends(allowed_operation)])
@@ -70,11 +72,11 @@ async def delete_photo(photo_id: int,
     return await PhotosRepository().delete_photo(user_id, photo_id, current_user, db)
 
 
-@router.get('/{photo_id}', response_model=PhotoSchema, dependencies=[Depends(allowed_operation)])
+@router.get('/single/{photo_id}', response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
 async def get_photo_by_id(photo_id: int,
                           user_id: int = None,
                           current_user: User = Depends(auth_service.get_current_user),
                           db: Session = Depends(get_db)):
-    return await PhotosRepository().get_photo_by_id(user_id, photo_id, current_user, db)
+    return await PhotosRepository().get_photo_by_id(photo_id, current_user, db)
 
 
