@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from pydantic import BaseModel, Field, EmailStr, field_validator, constr
 
@@ -49,7 +49,7 @@ class RequestEmail(BaseModel):
 class PhotoSchema(BaseModel):
     id: int
     file_url: str
-    description: str
+    description: Optional[str]
     created_at: datetime
     user_id: int
 
@@ -63,12 +63,12 @@ class TagDetail(BaseModel):
     name: str
 
 
-# class PhotoResponse(BaseModel):
-#     photo: PhotoSchema
-#     tags: List[TagDetail]
+class PhotoResponse(BaseModel):
+    photo: PhotoSchema
+    tags: Optional[List[TagDetail]]
 
-class PhotoResponse(PhotoSchema):
-    tags: List[TagDetail]
+# class PhotoResponse(PhotoSchema):
+#     tags: List[TagDetail]
 
 
 class CommentModel(BaseModel):

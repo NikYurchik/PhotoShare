@@ -9,6 +9,7 @@ from cloudinary import uploader
 from sqlalchemy.orm import Session
 
 from src.database.models import Role, Photo, User, PhotoURL, tag_photo_association as t2p, Tag, tag_photo_association
+# from src.database.models import Role, Photo, User, PhotoURL, Tag, Tag2Photo
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
 from src.conf import messages
@@ -16,7 +17,7 @@ from src.conf import messages
 
 class PhotosRepository:
 
-    async def upload_new_photo(self, user_id: int | None, photo_description: str, tags: str,
+    async def upload_new_photo(self, photo_description: str, tags: List[str],
                                photo: UploadFile, current_user: User, session: Session) -> Photo:
         """
         Upload a new photo with description and tags, associated with the given user
@@ -32,10 +33,7 @@ class PhotosRepository:
         Raises:
             HTTPException: If an error occurs during the upload or database operation.
         """
-        if user_id is None:
-            user_id = current_user.id
-        elif user_id != current_user.id and current_user.roles != Role.admin:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+        user_id = current_user.id
         try:
             uploaded_file = uploader.upload(photo.file, folder="upload")
             query = insert(Photo).values(
@@ -102,7 +100,9 @@ class PhotosRepository:
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
-        return photo
+        tags = await self.__get_tags_photo(photo_id, session)
+        # return photo
+        return {"photo": photo, "tags": tags}
 
     async def update_photo_description(self, user_id: int | None, photo_id: int, body: PhotoUpdateModel,
                                        current_user: User, session: Session) -> Optional[Photo]:
@@ -145,13 +145,18 @@ class PhotosRepository:
         Returns:
             List[Photo]: The list of photos
         """
+        result = []
         offset = (page - 1) * per_page
         query = select(Photo).order_by(desc(Photo.created_at)).offset(offset).limit(per_page)
         photos = session.execute(query).scalars().all()
+        for photo in photos:
+            tags = tags = await self.__get_tags_photo(photo.id, session)
+            result.append({"photo": photo, "tags": tags})
+        print(result)
+        return result
+        # return photos
 
-        return photos
-
-    async def get_photos_by_user(self, user_id: int | None, page: int, per_page: int, session: Session) -> List[Photo]:
+    async def get_photos_by_user(self, user_id: int | None, current_user: User, page: int, per_page: int, session: Session) -> List[Photo]:
         """
         Retrieve a list of photos uploaded by a specific user with pagination, sorted from newest to oldest
         Args:
@@ -162,13 +167,20 @@ class PhotosRepository:
         Returns:
             List[Photo]: The list of photos uploaded by the user
         """
+        result = []
         offset = (page - 1) * per_page
-        query = select(Photo).where(Photo.user_id == user_id).order_by(desc(Photo.created_at)).offset(offset).limit(
-            per_page)
+        if user_id is None:
+            user_id = current_user.id
+        query = select(Photo).where(Photo.user_id == user_id).order_by(desc(Photo.created_at)).offset(offset).limit(per_page)
         photos = session.execute(query).scalars().all()
-        return photos
+        for photo in photos:
+            tags = tags = await self.__get_tags_photo(photo.id, session)
+            result.append({"photo": photo, "tags": tags})
+        print(result)
+        return result
+        # return photos
 
-    async def __add_tags_to_photo(self, tags_str: str, photo_id: int, session: Session) -> List[Tag]:
+    async def __add_tags_to_photo(self, tags: List[str], photo_id: int, session: Session) -> List[Tag]:
         """
         Add tags to a photo
         Args:
@@ -179,14 +191,21 @@ class PhotosRepository:
             List[Tag]: The list of tags added to the photo
         """
         result = []
-        tags = tags_str.split(',')
+        # tags = tags_str.replace(" ", "").split(",")
         for tag in tags:
-            tag_ = await TagRepository().check_tag_exist_or_create(tag, session)
+            tag_ = await TagRepository().check_tag_exist_or_create(tag, session)    # -> Tag
             query = insert(t2p).values(tag_id=tag_.id, photo_id=photo_id).returning(t2p)
+            # query = insert(Tag2Photo).values(tag_id=tag_.id, photo_id=photo_id).returning(Tag2Photo)
             add_tag_to_db = session.execute(query)
             result.append(tag_)
         session.commit()
         return result
+
+    async def __get_tags_photo(self, photo_id: int, session: Session) -> List[Tag]:
+        tquery = select(Tag).join(t2p).where(Tag.id == t2p.c.tag_id).where(t2p.c.photo_id == photo_id)
+        tags = session.execute(tquery).scalars().all()
+        return tags 
+
 
     async def search_photos(self, keyword: str, tag: str, order_by: str, session: Session):
         """
@@ -201,6 +220,9 @@ class PhotosRepository:
         Returns:
             List[Photo]: A list of Photo objects that match the search and filter criteria.
         """
+        print(f"keyword: {keyword}")
+        print(f"tag: {tag}")
+        print(f"order_by: {order_by}")
         photos_query = select(Photo)
 
         if keyword:
@@ -214,15 +236,21 @@ class PhotosRepository:
             if tag_obj:
                 tag_filter = tag_photo_association.c.tag_id == tag_obj.id
                 photos_query = photos_query.join(tag_photo_association).where(tag_filter)
+                # photos_query = photos_query.join(Tag2Photo).where(Tag2Photo.tag_id == tag_obj.id)
 
         if order_by == 'newest':
             photos_query = photos_query.order_by(Photo.created_at.desc())
         elif order_by == 'oldest':
             photos_query = photos_query.order_by(Photo.created_at.asc())
 
+        result = []
         photos = session.execute(photos_query).scalars().all()
+        for photo in photos:
+            tags = tags = await self.__get_tags_photo(photo.id, session)
+            result.append({"photo": photo, "tags": tags})
 
-        return photos
+        return result
+        # return photos
 
 
 async def photo_transform(url_changed_photo: str, photo: Photo, db: Session) -> Photo:
