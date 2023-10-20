@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Optional
-import pickle
+# import pickle
 
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-import redis
+# import redis
 
 
 from src.database.db import get_db
@@ -21,7 +21,7 @@ class Auth:
 
     SECRET_KEY = settings.secret_key
     ALGORITHM = settings.algorithm
-    r = redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
+    # r = redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
 
     def verify_password(self, plain_password, hashed_password):
         """
@@ -145,16 +145,18 @@ class Auth:
         except JWTError as e:
             raise credentials_exception
 
-        user = self.r.get(f"user:{email}")
-        # user = None
+        # user = self.r.get(f"user:{email}")
+        # if user is None:
+        #     user = await repository_users.get_user_by_email(email, db)
+        #     if user is None:
+        #         raise credentials_exception
+        #     self.r.set(f"user:{email}", pickle.dumps(user))
+        #     self.r.expire(f"user:{email}", 900)
+        # else:
+        #     user = pickle.loads(user)
+        user = await repository_users.get_user_by_email(email, db)
         if user is None:
-            user = await repository_users.get_user_by_email(email, db)
-            if user is None:
-                raise credentials_exception
-            self.r.set(f"user:{email}", pickle.dumps(user))
-            self.r.expire(f"user:{email}", 900)
-        else:
-            user = pickle.loads(user)
+            raise credentials_exception
         return user
 
 

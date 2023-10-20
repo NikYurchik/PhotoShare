@@ -3,7 +3,7 @@ import re
 from typing import Callable
 import pathlib
 
-import redis.asyncio as redis
+# import redis.asyncio as redis
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -11,28 +11,31 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
+# from fastapi_limiter import FastAPILimiter
+# from fastapi_limiter.depends import RateLimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
-from src.routes import auth, users, photos
-from src.conf.config import settings
+from src.routes import auth, users, myuser, photos, comments
+# from src.conf.config import settings, BASE_DIR
+from src.conf.config import BASE_DIR
 from src.conf import messages
+from src.services.custom_limiter import RateLimiter
 
 app = FastAPI()
 
 
-@app.on_event("startup")
-async def startup():
-    """
-    The startup function is called when the application starts up.
-        It's a good place to initialize things that are needed by your app, like database connections or caches.
+# @app.on_event("startup")
+# async def startup():
+#     """
+#     The startup function is called when the application starts up.
+#         It's a good place to initialize things that are needed by your app, like database connections or caches.
     
-    :return: A redis connection pool
-    """
-    r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
-    await FastAPILimiter.init(r)
+#     :return: A redis connection pool
+#     """
+#     # await check_user_admin()
+#     r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
+#     await FastAPILimiter.init(r)
 
 
 origins = [ 
@@ -53,11 +56,13 @@ app.add_middleware(
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(photos.router, prefix='/api')
-
+app.include_router(myuser.router, prefix='/api')
+app.include_router(comments.router, prefix='/api')
 
 templates = Jinja2Templates(directory='templates')
 BASE_DIR = pathlib.Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+app.mount("/htmlcov", StaticFiles(directory=BASE_DIR / "htmlcov"), name="htmlcov")
 
 
 # ALLOWED_IPS = [
@@ -85,7 +90,7 @@ user_agent_ban_list = [r"Python-urllib"]
 #     """
 #     The limit_access_by_ip function is a middleware function that limits access to the API by IP address.
 #         It checks if the request's client host IP address is in ALLOWED_IPS, and if not, returns a 403 Forbidden response.
-
+    
 #     :param request: Request: Get the ip address of the client that is making a request
 #     :param call_next: Callable: Call the next function in the pipeline
 #     :return: A jsonresponse object, which contains the http status code and a message
@@ -101,25 +106,25 @@ user_agent_ban_list = [r"Python-urllib"]
 #     return response
 
 
-# @app.middleware("http")
-# async def user_agent_ban_middleware(request: Request, call_next: Callable):
-#     """
-#     The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
-#         If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
-#         Otherwise, it calls call_next and returns its result.
-
-#     :param request: Request: Access the request object
-#     :param call_next: Callable: Pass the request to the next middleware in line
-#     :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list
-#     :doc-author: Python-WEB13-project-team-2
-#     """
-#     user_agent = request.headers.get("user-agent")
-#     # print(f'user_agent: {user_agent}')
-#     for ban_pattern in user_agent_ban_list:
-#         if re.search(ban_pattern, user_agent):
-#             return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.YOU_ARE_BANNED})
-#     response = await call_next(request)
-#     return response
+@app.middleware("http")
+async def user_agent_ban_middleware(request: Request, call_next: Callable):
+    """
+    The user_agent_ban_middleware function is a middleware function that checks the user-agent header of an incoming request.
+        If the user-agent matches any of the patterns in `user_agent_ban_list`, then it returns a 403 Forbidden response.
+        Otherwise, it calls call_next and returns its result.
+    
+    :param request: Request: Access the request object
+    :param call_next: Callable: Pass the request to the next middleware in line
+    :return: A jsonresponse object if the user agent matches a pattern in the user_agent_ban_list
+    :doc-author: Python-WEB13-project-team-2
+    """
+    user_agent = request.headers.get("user-agent")
+    # print(f'user_agent: {user_agent}')
+    for ban_pattern in user_agent_ban_list:
+        if re.search(ban_pattern, user_agent):
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.YOU_ARE_BANNED})
+    response = await call_next(request)
+    return response
 
 
 @app.get("/", response_class=HTMLResponse, description="Main Page", dependencies=[Depends(RateLimiter(times=10, seconds=60))])
@@ -158,4 +163,4 @@ def healthchecker(db: Session = Depends(get_db)):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

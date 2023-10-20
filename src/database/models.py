@@ -6,13 +6,6 @@ from sqlalchemy.sql.schema import ForeignKey, Table
 
 Base = declarative_base()
 
-tag_photo_association = Table(
-    'tag_m2m_photo',
-    Base.metadata,
-    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
-    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
-)
-
 
 class Role(enum.Enum):
     admin: str = 'admin'
@@ -24,7 +17,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
-    email = Column(String(250), nullable=False, unique=True)
+    email = Column(String(250), nullable=False, unique=True)                   
     password = Column(String(255), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     avatar = Column(String(255), nullable=True)
@@ -38,9 +31,9 @@ class Photo(Base):
     __tablename__ = "photos"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
-    file_url = Column(String(255), nullable=False, unique=True)
+    file_url = Column(String, nullable=False, unique=True)
     qr_url = Column(String(255), nullable=True, unique=True)
-    description = Column(String(255), nullable=True)
+    description = Column(String, nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
     user = relationship('User', backref='photos')
@@ -52,10 +45,26 @@ class Tag(Base):
     name = Column(String, nullable=False, unique=True)
 
 
+tag_photo_association = Table(
+    'tag_m2m_photo',
+    Base.metadata,
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
+    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
+)
+
+# class Tag2Photo(Base):
+#     __tablename__ = "tag_m2m_photo"
+#     id = Column(Integer, primary_key=True)
+#     tag_id = Column(Integer, ForeignKey('tags.id', ondelete='CASCADE'))
+#     photo_id = Column(Integer, ForeignKey('photos.id', ondelete='CASCADE'))
+#     tag = relationship('Tag', backref='tags')
+#     photo = relationship('Photo', backref='photos')
+
+
 class PhotoURL(Base):
     __tablename__ = "photo_urls"
     id = Column(Integer, primary_key=True)
-    file_url = Column(String(255), nullable=False, unique=True)
+    file_url = Column(String, nullable=False, unique=True)
     qr_url = Column(String(255), nullable=True, unique=True)
     photo_id = Column(Integer, ForeignKey("photos.id", ondelete='CASCADE'))
     created_at = Column('created_at', DateTime, default=func.now())

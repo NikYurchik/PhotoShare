@@ -10,4 +10,4 @@ htmlcov
 postgres-data
 .idea
 test.db
-fileupload
+fileupload.tst

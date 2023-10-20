@@ -1,12 +1,14 @@
-import hashlib
+import re
 
 import cloudinary
 import cloudinary.uploader
 
 from src.conf.config import settings
+from src.database.models import User
 
 
 class CloudImage:
+
     cloudinary.config(
         cloud_name=settings.cloudinary_name,
         api_key=settings.cloudinary_api_key,
@@ -14,22 +16,9 @@ class CloudImage:
         secure=True
     )
 
-    @staticmethod
-    def generate_name_avatar(email: str):
-        """
-        The generate_name_avatar function takes an email address as input and returns a unique name for the avatar image.
-            - The function uses the SHA256 hash algorithm to generate a unique string from the email address, then truncates it to 12 characters.
-            - This is used as part of the file path where we will store our images.
-        
-        :param email: str: Specify the type of parameter that is expected to be passed into the function
-        :return: A string
-        :doc-author: Python-WEB13-project-team-2
-        """
-        name = hashlib.sha256(email.encode('utf-8')).hexdigest()[:12]
-        return f"hw_rest_api/{name}"
 
     @staticmethod
-    def upload(file, public_id: str):
+    def upload_image(photo_file, user: User, folder: str=None) -> str:
         """
         The upload function takes a file and public_id as arguments.
             The function then uploads the file to Cloudinary with the given public_id, overwriting any existing files with that id.
@@ -39,21 +28,64 @@ class CloudImage:
         :return: A dictionary with the following keys:
         :doc-author: Python-WEB13-project-team-2
         """
-        r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
-        return r
+        if not folder:
+            folder = user.username
+        res = cloudinary.uploader.upload(photo_file, folder=folder)
+        return res["secure_url"]
+
 
     @staticmethod
-    def get_url_for_avatar(public_id, r):
-        """
-        The get_url_for_avatar function takes a public_id and an optional resource dictionary.
-            It returns the URL for the avatar image, which is a 250x250px crop of the original image.
-        
-        :param public_id: Identify the image to be uploaded
-        :param r: Get the version of the image
-        :return: A string containing the url of the avatar image
-        :doc-author: Python-WEB13-project-team-2
-        """
-        src_url = cloudinary.CloudinaryImage(public_id) \
-            .build_url(width=250, height=250, crop='fill', version=r.get('version'))
-        return src_url
-    
+    def delete_image(image_url: str):
+        pattern = r"/v\d+/(.*?)\."
+        match = re.search(pattern, image_url)
+        if not match:
+            pattern = r"/v\d+/(.*?)$"
+            match = re.search(pattern, image_url)
+        if match:
+            public_id = match.group(1)
+            result = cloudinary.uploader.destroy(public_id)
+            if result.get('result') == 'ok':
+                return ""
+            else:
+                return result.get('message')
+        else:
+            return "URL does not contain 'public_id' Cloudinary"
+
+    @staticmethod
+    def upload_transform_image(body, photo_file_url) -> str:
+
+        cloudinary.config(cloud_name=settings.cloudinary_name,
+                          api_key=settings.cloudinary_api_key,
+                          api_secret=settings.cloudinary_api_secret,
+                          secure=True)
+
+        public_id = re.search(r"/v\d+/(.+)\.\w+$", photo_file_url).group(1)
+
+        url_changed_photo = cloudinary.CloudinaryImage(f"{public_id}").build_url(transformation=[
+            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
+            {'radius': body.radius},
+            {'effect': body.effect} if body.effect else None,
+            {'quality': body.quality},
+            {'fetch_format': body.fetch_format if body.fetch_format else re.search(r"\w+$", photo_file_url).group(
+                0)}
+        ])
+
+        return url_changed_photo
+
+    @staticmethod
+    def upload_qrcode(qr_os_path, qr_ci_folder, qr_name) -> str:
+
+        cloudinary.config(cloud_name=settings.cloudinary_name,
+                          api_key=settings.cloudinary_api_key,
+                          api_secret=settings.cloudinary_api_secret,
+                          secure=True)
+
+        result = cloudinary.uploader.upload(
+            qr_os_path,
+            folder=qr_ci_folder,
+            resource_type="image",
+            public_id=f"{qr_name}"
+        )
+
+        return result['url']
+

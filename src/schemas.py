@@ -1,6 +1,8 @@
+from typing import Optional
 from datetime import datetime, date
+from typing import Optional, List, Dict
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator, constr
 
 from src.database.models import Role
 
@@ -15,13 +17,19 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: EmailStr
-    created_at: datetime
-    avatar: str
+    created_at: Optional[datetime] = datetime.now()
+    # created_at: datetime = datetime.now()
+    avatar: Optional[str] = None
+    # avatar: str = None
     roles: Role
 
     class Config:
         from_attributes = True
 
+
+class UserDbAdmin(UserDb):
+    confirmed: bool
+    is_banned: bool
 
 class UserResponse(BaseModel):
     user: UserDb
@@ -38,24 +46,48 @@ class RequestEmail(BaseModel):
     email: EmailStr
 
 
-class PhotoModel(BaseModel):
-    user_id: int
-    file_url: str
-    description: str
-    created_at: datetime
-
-
-class PhotoUpdate(BaseModel):
-    qr_url: str
-    description: str
-
-
-class PhotoResponse(PhotoModel):
+class PhotoSchema(BaseModel):
     id: int
-    # user_id: int
-    # file_url: str
-    # description: str
-    # created_at: datetime
+    file_url: str
+    qr_url: str
+    description: Optional[str]
+    created_at: datetime
+    user_id: int
+
+
+class PhotoUpdateModel(BaseModel):
+    description: str
+
+
+class TagDetail(BaseModel):
+    id: int
+    name: str
+
+
+class PhotoResponse(BaseModel):
+    photo: PhotoSchema
+    tags: Optional[List[TagDetail]]
+
+# class PhotoResponse(PhotoSchema):
+#     tags: List[TagDetail]
+
+
+class CommentModel(BaseModel):
+    text: str
+
+
+class CommentUpdate(BaseModel):
+    id: int
+    text: str
+
+
+class CommentDelete(BaseModel):
+    id: int
+
+
+class CommentResponse(BaseModel):
+    id: int
+    text: str
 
     class Config:
         from_attributes = True
@@ -63,12 +95,9 @@ class PhotoResponse(PhotoModel):
 
 class PhotoURLModel(BaseModel):
     file_url: str
+    qr_url: str
     photo_id: int
     created_at: datetime
-
-
-class PhotoURLUpdate(BaseModel):
-    qr_url: str
 
 
 class PhotoURLResponse(PhotoURLModel):
@@ -94,4 +123,3 @@ class PhotoQRCodeModel(BaseModel):
     transform_photo_id: str | None = None
     fill_color: str | None = "black"
     back_color: str | None = "white"
-
