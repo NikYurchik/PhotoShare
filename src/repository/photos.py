@@ -1,24 +1,26 @@
-import re
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import insert, select, update, delete, desc, asc
-# from cloudinary.uploader import upload, destroy
 from cloudinary import uploader
 from sqlalchemy.orm import Session
 
 from src.database.models import Role, Photo, User, PhotoURL, tag_photo_association as t2p, Tag, tag_photo_association
-# from src.database.models import Role, Photo, User, PhotoURL, Tag, Tag2Photo
 from src.repository.tags import TagRepository
 from src.schemas import PhotoUpdateModel
 from src.conf import messages
+from src.services.cloud_image import CloudImage
 
 
 class PhotosRepository:
 
-    async def upload_new_photo(self, photo_description: str, tags: List[str],
-                               photo: UploadFile, current_user: User, session: Session) -> Photo:
+    async def upload_new_photo(self,
+                               photo_description: str,
+                               tags: List[str],
+                               photo_file: UploadFile,
+                               current_user: User,
+                               session: Session) -> Photo:
         """
         Upload a new photo with description and tags, associated with the given user
         Args:
@@ -35,22 +37,26 @@ class PhotosRepository:
         """
         user_id = current_user.id
         try:
-            uploaded_file = uploader.upload(photo.file, folder="upload")
+            photo_url = CloudImage.upload_image(photo_file=photo_file.file, user=current_user)
+
             query = insert(Photo).values(
                 description=photo_description,
-                file_url=uploaded_file["secure_url"],
+                file_url=photo_url,
                 user_id=user_id,
             ).returning(Photo)
             new_photo = session.execute(query).scalar_one()
+
             tags_list = []
             if tags:
-                tags_list = await self.__add_tags_to_photo(tags, new_photo.id, session)
+                tags_list = await TagRepository().add_tags_to_photo(tags, new_photo.id, session)
             session.commit()
             return {"photo": new_photo, "tags": tags_list}
+
         except Exception as e:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    async def delete_photo(self, user_id: int | None, photo_id: int, current_user: User, session: Session) -> None:
+
+    async def delete_photo(self, photo_id: int, current_user: User, session: Session) -> None:
         """
         Delete a photo with the given photo_id associated with the user
         Args:
@@ -61,25 +67,18 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found or an error occurs during deletion.
         """
-        if user_id is None:
-            user_id = current_user.id
-        elif user_id != current_user.id and current_user.roles != Role.admin:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
-        
-        query = delete(Photo).where(Photo.id == photo_id, Photo.user_id == user_id).returning(Photo)
+        query = delete(Photo).where(Photo.id == photo_id).returning(Photo)
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
-
-        photo_url = photo.file_url
-        pattern = r"/v\d+/(.*?)\."
-        match = re.search(pattern, photo_url)
-        public_id = match.group(1)
-
-        result = uploader.destroy(public_id)
-        if result.get('result') != 'ok':
+        elif photo.user_id != current_user.id and current_user.roles != Role.admin:
             session.rollback()
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result.get('message'))
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+
+        result = CloudImage.delete_image(photo.file_url)
+        if result:
+            session.rollback()
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
         session.commit()
 
 
@@ -100,11 +99,11 @@ class PhotosRepository:
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
-        tags = await self.__get_tags_photo(photo_id, session)
-        # return photo
+        tags = await TagRepository().get_tags_photo(photo_id, session)
         return {"photo": photo, "tags": tags}
 
-    async def update_photo_description(self, user_id: int | None, photo_id: int, body: PhotoUpdateModel,
+
+    async def update_photo_description(self, photo_id: int, description: str,
                                        current_user: User, session: Session) -> Optional[Photo]:
         """
         Update the description of a photo with the given photo_id associated with the user
@@ -119,21 +118,24 @@ class PhotosRepository:
         Raises:
             HTTPException: If the photo is not found.
         """
-        if user_id is None:
-            user_id = current_user.id
-        elif user_id != current_user.id and current_user.roles != Role.admin:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
         query = (
             update(Photo)
-            .where(Photo.id == photo_id, Photo.user_id == user_id)
-            .values(**body.model_dump())
+            .where(Photo.id == photo_id)
+            .values({"description": description})
             .returning(Photo)
         )
         photo = session.execute(query).scalar_one_or_none()
+
         if not photo:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Photo not found")
+        elif photo.user_id != current_user.id and current_user.roles != Role.admin:
+            session.rollback()
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+
         session.commit()
-        return photo
+        tags = await TagRepository().get_tags_photo(photo_id, session)
+        return {"photo": photo, "tags": tags}
+
 
     async def get_all_photos(self, page: int, per_page: int, session: Session) -> List[Photo]:
         """
@@ -150,11 +152,11 @@ class PhotosRepository:
         query = select(Photo).order_by(desc(Photo.created_at)).offset(offset).limit(per_page)
         photos = session.execute(query).scalars().all()
         for photo in photos:
-            tags = tags = await self.__get_tags_photo(photo.id, session)
+            tags = tags = await TagRepository().get_tags_photo(photo.id, session)
             result.append({"photo": photo, "tags": tags})
-        print(result)
+        # print(result)
         return result
-        # return photos
+
 
     async def get_photos_by_user(self, user_id: int | None, current_user: User, page: int, per_page: int, session: Session) -> List[Photo]:
         """
@@ -174,37 +176,10 @@ class PhotosRepository:
         query = select(Photo).where(Photo.user_id == user_id).order_by(desc(Photo.created_at)).offset(offset).limit(per_page)
         photos = session.execute(query).scalars().all()
         for photo in photos:
-            tags = tags = await self.__get_tags_photo(photo.id, session)
+            tags = tags = await TagRepository().get_tags_photo(photo.id, session)
             result.append({"photo": photo, "tags": tags})
-        print(result)
+        # print(result)
         return result
-        # return photos
-
-    async def __add_tags_to_photo(self, tags: List[str], photo_id: int, session: Session) -> List[Tag]:
-        """
-        Add tags to a photo
-        Args:
-            tags_str (str): A string containing tags separated by commas.
-            photo_id: The ID of the photo to which tags will be added.
-            session: The database session
-        Returns:
-            List[Tag]: The list of tags added to the photo
-        """
-        result = []
-        # tags = tags_str.replace(" ", "").split(",")
-        for tag in tags:
-            tag_ = await TagRepository().check_tag_exist_or_create(tag, session)    # -> Tag
-            query = insert(t2p).values(tag_id=tag_.id, photo_id=photo_id).returning(t2p)
-            # query = insert(Tag2Photo).values(tag_id=tag_.id, photo_id=photo_id).returning(Tag2Photo)
-            add_tag_to_db = session.execute(query)
-            result.append(tag_)
-        session.commit()
-        return result
-
-    async def __get_tags_photo(self, photo_id: int, session: Session) -> List[Tag]:
-        tquery = select(Tag).join(t2p).where(Tag.id == t2p.c.tag_id).where(t2p.c.photo_id == photo_id)
-        tags = session.execute(tquery).scalars().all()
-        return tags 
 
 
     async def search_photos(self, keyword: str, tag: str, order_by: str, session: Session):
@@ -220,9 +195,9 @@ class PhotosRepository:
         Returns:
             List[Photo]: A list of Photo objects that match the search and filter criteria.
         """
-        print(f"keyword: {keyword}")
-        print(f"tag: {tag}")
-        print(f"order_by: {order_by}")
+        # print(f"keyword: {keyword}")
+        # print(f"tag: {tag}")
+        # print(f"order_by: {order_by}")
         photos_query = select(Photo)
 
         if keyword:
@@ -246,7 +221,7 @@ class PhotosRepository:
         result = []
         photos = session.execute(photos_query).scalars().all()
         for photo in photos:
-            tags = tags = await self.__get_tags_photo(photo.id, session)
+            tags = tags = await TagRepository().get_tags_photo(photo.id, session)
             result.append({"photo": photo, "tags": tags})
 
         return result

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
@@ -43,40 +43,38 @@ async def search_photos(
     return photos
 
 
-@router.post('/new', status_code=201, response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
-async def upload_photo(photo: UploadFile = File(...),
-                       photo_description: str = Form(...),
-                       tags: str = Query(None, description="Tags string separated by commas"),
-                       current_user: User = Depends(auth_service.get_current_user),
-                       db: Session = Depends(get_db)):
-    tags_list = await Validator().validate_tags_count(tags)
-    print(f"tags: {tags}")
-    print(f"tags_list: {tags_list}")
-    return await PhotosRepository().upload_new_photo(photo_description, tags_list, photo, current_user, db)
-
-
-@router.put('/{photo_id}', response_model=PhotoSchema, dependencies=[Depends(allowed_operation)])
-async def update_photo_description(photo_id: int,
-                                   body: PhotoUpdateModel,
-                                   user_id: int = None,
-                                   current_user: User = Depends(auth_service.get_current_user),
-                                   db: Session = Depends(get_db)):
-    return await PhotosRepository().update_photo_description(user_id, photo_id, body, current_user, db)
-
-
-@router.delete('/{photo_id}', status_code=204, dependencies=[Depends(allowed_operation)])
-async def delete_photo(photo_id: int,
-                       user_id: int = None,
-                       current_user: User = Depends(auth_service.get_current_user),
-                       db: Session = Depends(get_db)):
-    return await PhotosRepository().delete_photo(user_id, photo_id, current_user, db)
-
-
 @router.get('/single/{photo_id}', response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
 async def get_photo_by_id(photo_id: int,
                           user_id: int = None,
                           current_user: User = Depends(auth_service.get_current_user),
                           db: Session = Depends(get_db)):
     return await PhotosRepository().get_photo_by_id(photo_id, current_user, db)
+
+
+@router.post('/new', status_code=201, response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
+async def upload_photo(photo_file: UploadFile = File(...),
+                       description: str = Form(...),
+                       tags: str = Query(None, description="Tags string separated by commas"),
+                       current_user: User = Depends(auth_service.get_current_user),
+                       db: Session = Depends(get_db)):
+    tags_list = await Validator().validate_tags_count(tags)
+    # print(f"photo_file: {photo_file.filename}, type: {type(photo_file)}")
+    return await PhotosRepository().upload_new_photo(description, tags_list, photo_file, current_user, db)
+
+
+@router.put('/{photo_id}', response_model=PhotoResponse, dependencies=[Depends(allowed_operation)])
+async def update_photo_description(photo_id: int,
+                                #    body: PhotoUpdateModel,
+                                   description: str = Form(...),
+                                   current_user: User = Depends(auth_service.get_current_user),
+                                   db: Session = Depends(get_db)):
+    return await PhotosRepository().update_photo_description(photo_id, description, current_user, db)
+
+
+@router.delete('/{photo_id}', status_code=204, dependencies=[Depends(allowed_operation)])
+async def delete_photo(photo_id: int,
+                       current_user: User = Depends(auth_service.get_current_user),
+                       db: Session = Depends(get_db)):
+    return await PhotosRepository().delete_photo(photo_id, current_user, db)
 
 
