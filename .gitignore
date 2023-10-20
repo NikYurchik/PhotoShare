@@ -6,7 +6,6 @@ config.ini
 .env
 .pytest_cache
 docs
-htmlcov
 postgres-data
 .idea
 test.db
