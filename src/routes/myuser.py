@@ -2,19 +2,12 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.database.models import User, Role
+from src.database.models import User
 from src.repository import users as repository_users
 from src.services.auth import auth_service
 from src.schemas import UserDb
 from src.services.cloud_image import CloudImage
-from src.services.roles import RoleAccess
 
-# NULL_DATE = datetime.now().replace(month=1, day=1)
-
-allowed_operation_get = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_create = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_update = RoleAccess([Role.admin, Role.moderator])
-allowed_operation_remove = RoleAccess([Role.admin])
 
 router = APIRouter(prefix="/myuser", tags=["myuser"])
 
@@ -55,14 +48,11 @@ async def update_avatar_user(file: UploadFile = File(),
     :return: A user object
     :doc-author: Python-WEB13-project-team-2
     """
-    # print(f"content_type: {file.content_type}")
-    # print(f"headers: {file.headers}")
-    # print(f"filename: {file.filename}")
-    # print(f"size: {file.size}")
-    # print(f"file: {file.file}")
-    public_id = CloudImage.generate_name_avatar(current_user.email)
-    r = CloudImage.upload(file.file, public_id)
-    src_url = CloudImage.get_url_for_avatar(public_id, r)
+    if current_user.avatar:
+        result = CloudImage.delete_image(current_user.avatar)
+        if result:
+            print(f"Update_Avatar_User: {result}")
+    src_url = CloudImage.upload_image(photo_file=file.file, user=current_user, folder=f"avatar/{current_user.username}")
     user = await repository_users.update_avatar(current_user, src_url, db)
     return user
 

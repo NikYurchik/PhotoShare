@@ -47,9 +47,7 @@ def test_update_avatar_user(client, token, user, monkeypatch):
     #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
     #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
     if True:
-        monkeypatch.setattr('src.services.cloud_image.CloudImage.generate_name_avatar', MagicMock())
-        monkeypatch.setattr('src.services.cloud_image.CloudImage.upload', MagicMock())
-        monkeypatch.setattr('src.services.cloud_image.CloudImage.get_url_for_avatar', MagicMock(return_value=USER_AVATAR))
+        monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_image', MagicMock(return_value=USER_AVATAR))
 
         f = './fileupload.tst'
         with open(f, 'wb') as tmp:
@@ -57,7 +55,6 @@ def test_update_avatar_user(client, token, user, monkeypatch):
         with open(f, 'rb') as tmp:
             response = client.patch("/api/myuser/avatar",
                                     files={"file": ("filename", tmp, "image/jpeg")},
-                                    # files=files,
                                     headers={"Authorization": f"Bearer {token}"})
             assert response.status_code == 200, response.text
             data = response.json()

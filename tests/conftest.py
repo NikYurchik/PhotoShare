@@ -59,39 +59,61 @@ def user():
 
 @pytest.fixture(scope="module")
 def photo():
-    return {"user_id": "1",
-            "file_url": "https://gravatar.com/image.png",
-            "description": "Test photo",
-            "tag_str": "tag1, tag2",
-            "tags": ["tags1", "tags2"]
+    # return {"user_id": "1",
+    #         "file_url": "https://gravatar.com/image.png",
+    #         "description": "Test photo",
+    #         "tag_str": "tag1, tag2",
+    #         "tags": ["tags1", "tags2"]
+    #         }
+    return {
+                "photo": {
+                    "id": 1,
+                    "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697427418/upload/vplnv9bplyylkvyomdgd.jpg",
+                    "description": "photo_description",
+                    "user_id": "1"
+                },
+                "tags": [
+                    {
+                        "name": "tags1"
+                    },
+                    {
+                        "name": "tags2"
+                    }
+                ]
             }
-            # {
-            #     "photo": {
-            #         "id": 1,
-            #         "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697427418/upload/vplnv9bplyylkvyomdgd.jpg",
-            #         "description": "photo_description",
-            #         "user_id": "1"
-            #     },
-            #     "tags": [
-            #         {
-            #             "name": "tags1"
-            #         },
-            #         {
-            #             "name": "tags2"
-            #         }
-            #     ]
-            # }
 
 @pytest.fixture(scope="module")
 def photos():
     return [
-                {"user_id": "1",
-                "file_url": "https://gravatar.com/image.png",
-                "description": "Test photo"
+                {
+                    "photo": {
+                        "user_id": "1",
+                        "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697427418/upload/vplnv9bplyylkvyomdgd.jpg",
+                        "description": "Test photo"
+                    },
+                    "tags": [
+                        {
+                            "name": "tags1"
+                        },
+                        {
+                            "name": "tags2"
+                        }
+                    ]
                 },
-                {"user_id": "1",
-                "file_url": "https://gravatar.com/image.png",
-                "description": "Test photo2"
+                {
+                    "photo": {
+                        "user_id": "1",
+                        "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697769558/test1/j6fblr92rgf7oo6foyt9.jpg",
+                        "description": "Test photo2"
+                        },
+                    "tags": [
+                        {
+                            "name": "tags2"
+                        },
+                        {
+                            "name": "tags3"
+                        }
+                    ]
                 }
             ]
 
