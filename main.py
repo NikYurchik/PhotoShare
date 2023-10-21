@@ -3,7 +3,7 @@ import re
 from typing import Callable
 import pathlib
 
-import redis.asyncio as redis
+import redis.asyncio as redis # noqa
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse, HTMLResponse

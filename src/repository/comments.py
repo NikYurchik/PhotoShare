@@ -5,8 +5,7 @@ from fastapi import HTTPException, status
 
 from src.conf import messages
 from src.schemas import CommentModel, CommentUpdate, CommentDelete
-from src.database.models import Comment, User
-from src.repository.photos import get_photo_by_id
+from src.database.models import Comment, User, Photo
 
 
 async def get_comments(photo_id: int, db: Session) -> List[Comment]:
@@ -38,7 +37,7 @@ async def create_comment(photo_id: int, body: CommentModel, user: User, db: Sess
     Returns:
         Comment: The newly created comment.
     """
-    photo = await get_photo_by_id(photo_id, db)
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
     comment = Comment(
         text=body.text,
         user=user,

@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+*.sql
+*.old
+config.ini
+.env
+.pytest_cache
+docs
+postgres-data
+.idea
+test.db
+fileupload.tst

@@ -239,10 +239,3 @@ async def photo_transform(url_changed_photo: str, photo: Photo, db: Session) -> 
     db.refresh(new_photo)
 
     return new_photo
-
-
-async def get_photo_by_id(photo_id, db) -> Photo:
-
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
-
-    return photo

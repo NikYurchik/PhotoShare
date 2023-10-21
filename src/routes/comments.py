@@ -1,7 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi_limiter.depends import RateLimiter
+from fastapi_limiter.depends import RateLimiter  # add custom limiter
 from sqlalchemy.orm import Session
 
 from src.schemas import CommentModel, CommentUpdate, CommentDelete, CommentResponse
