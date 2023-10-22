@@ -281,12 +281,14 @@ class PhotosRepository:
 
         db.delete(photo)
 
-        result = CloudImage.delete_image(photo.file_url)
-        if result:
-            db.rollback()
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
+        if photo.qr_url:
+            result = CloudImage.delete_image(photo.qr_url)
 
-        db.commit()
+            if result:
+                db.rollback()
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
+
+            db.commit()
 
     async def delete_all_transform_photo(self, photo: Photo, db: Session) -> None:
 
@@ -296,11 +298,12 @@ class PhotosRepository:
         db.execute(query)
 
         for one_photo in photos_to_del:
-            result = CloudImage.delete_image(one_photo.file_url)
+            if photo.qr_url:
+                result = CloudImage.delete_image(one_photo.qr_url)
 
-            if result:
-                db.rollback()
-                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
+                if result:
+                    db.rollback()
+                    raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
 
         db.commit()
 
