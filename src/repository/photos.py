@@ -298,7 +298,7 @@ class PhotosRepository:
         db.execute(query)
 
         for one_photo in photos_to_del:
-            if photo.qr_url:
+            if one_photo.qr_url:
                 result = CloudImage.delete_image(one_photo.qr_url)
 
                 if result:
