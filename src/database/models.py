@@ -31,6 +31,7 @@ class Photo(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
     file_url = Column(String, nullable=False, unique=True)
+    qr_url = Column(String(255), nullable=True, unique=True)
     description = Column(String, nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
@@ -47,8 +48,9 @@ tag_photo_association = Table(
     'tag_m2m_photo',
     Base.metadata,
     Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
-    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
-)
+    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE')),
+    UniqueConstraint("tag_id", "photo_id", name="uq_tag_m2m_photo"),
+ )
 
 # class Tag2Photo(Base):
 #     __tablename__ = "tag_m2m_photo"
@@ -62,7 +64,8 @@ tag_photo_association = Table(
 class PhotoURL(Base):
     __tablename__ = "photo_urls"
     id = Column(Integer, primary_key=True)
-    url = Column(String, nullable=False, unique=True)
+    file_url = Column(String, nullable=False, unique=True)
+    qr_url = Column(String(255), nullable=True, unique=True)
     photo_id = Column(Integer, ForeignKey("photos.id", ondelete='CASCADE'))
     created_at = Column('created_at', DateTime, default=func.now())
     photo = relationship('Photo', backref='photo_urls')

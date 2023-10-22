@@ -1,14 +1,16 @@
+import re
+import qrcode
+import aiofiles.os
 from typing import List, Optional
-from sqlalchemy.orm import Session
 
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import insert, select, update, delete, desc, asc
-from cloudinary import uploader
 from sqlalchemy.orm import Session
+from cloudinary import uploader
 
-from src.database.models import Role, Photo, User, PhotoURL, tag_photo_association as t2p, Tag, tag_photo_association
+from src.database.models import Role, Photo, User, PhotoURL, tag_photo_association as t2p, Tag
 from src.repository.tags import TagRepository
-from src.schemas import PhotoUpdateModel
+from src.schemas import PhotoUpdateModel, PhotoTransformModel, PhotoQRCodeModel
 from src.conf import messages
 from src.services.cloud_image import CloudImage
 
@@ -48,7 +50,7 @@ class PhotosRepository:
 
             tags_list = []
             if tags:
-                tags_list = await TagRepository().add_tags_to_photo(tags, new_photo.id, session)
+                tags_list = await TagRepository().add_tags_to_photo(tags, new_photo.id, session, False)
             session.commit()
             return {"photo": new_photo, "tags": tags_list}
 
@@ -209,8 +211,8 @@ class PhotosRepository:
             tag_obj = session.execute(tag_query).scalar_one_or_none()
 
             if tag_obj:
-                tag_filter = tag_photo_association.c.tag_id == tag_obj.id
-                photos_query = photos_query.join(tag_photo_association).where(tag_filter)
+                tag_filter = t2p.c.tag_id == tag_obj.id
+                photos_query = photos_query.join(t2p).where(tag_filter)
                 # photos_query = photos_query.join(Tag2Photo).where(Tag2Photo.tag_id == tag_obj.id)
 
         if order_by == 'newest':
@@ -221,25 +223,110 @@ class PhotosRepository:
         result = []
         photos = session.execute(photos_query).scalars().all()
         for photo in photos:
-            tags = tags = await TagRepository().get_tags_photo(photo.id, session)
+            tags = await TagRepository().get_tags_photo(photo.id, session)
             result.append({"photo": photo, "tags": tags})
 
         return result
         # return photos
 
 
-async def photo_transform(url_changed_photo: str, photo: Photo, db: Session) -> Photo:
+    async def upload_transform_photo(self, body: PhotoTransformModel, photo: Photo,
+                                     db: Session) -> Photo:
 
-    new_photo = PhotoURL(url=url_changed_photo, photo=photo)
-    db.add(new_photo)
-    db.commit()
-    db.refresh(new_photo)
+        url_changed_photo = CloudImage.upload_transform_image(body, photo.file_url)
 
-    return new_photo
+        photourl = db.query(PhotoURL).filter(PhotoURL.file_url == url_changed_photo).first()
+        if photourl:
+            return photourl
+        
+        try:
+            new_photo = PhotoURL(file_url=url_changed_photo, photo=photo)
+            db.add(new_photo)
+            db.commit()
+            db.refresh(new_photo)
+        except Exception as err:
+            s = str(err)
+            s = s[0:s.index("\n")]
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=s)
+        
+        return new_photo
 
 
-async def get_photo_by_id(photo_id, db) -> Photo:
+    async def update_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL, is_transform: bool=False) -> str:
+        qr_name = f"c{photo.id}" if is_transform else f"b{photo.id}"
+        qr_extension = "png"
 
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+        qr_os_folder = "../../temp_qr_photo"
+        qr_os_path = f"{qr_os_folder}/{qr_name}.{qr_extension}"
 
-    return photo
+        cl_math = re.search(r"/v\d+/(.+)/\w+\.\w+$", photo.file_url)
+        if not cl_math:
+            cl_math = re.search(r"/v\d+/(.+)/\w+$", photo.file_url)
+        ci_folder = cl_math.group(1)
+        qr_ci_folder = f"{ci_folder}/qr"
+
+        if not await aiofiles.os.path.exists(qr_os_folder):
+            await aiofiles.os.mkdir(qr_os_folder)
+
+        qr = qrcode.QRCode()
+        qr.add_data(photo.file_url)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color=body.fill_color, back_color=body.back_color)
+        img.save(qr_os_path)
+
+        photo_qr_url = CloudImage.upload_qrcode(qr_os_path, qr_ci_folder, qr_name)
+
+        await aiofiles.os.remove(qr_os_path)
+        return photo_qr_url
+
+
+    async def update_photo_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL,
+                                  db: Session) -> Photo | PhotoURL:
+        if not photo.qr_url:
+            photo_qr_url = await self.update_qr_url(body, photo)
+            photo.qr_url = photo_qr_url
+            db.commit()
+
+        tags = await TagRepository().get_tags_photo(photo.id, db)
+        return {"photo": photo, "tags": tags}
+        # return photo
+
+
+    async def update_transphoto_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL,
+                                  db: Session) -> Photo | PhotoURL:
+        if not photo.qr_url:
+            photo_qr_url = await self.update_qr_url(body, photo, True)
+            photo.qr_url = photo_qr_url
+            db.commit()
+        return photo
+
+
+    async def delete_transform_photo(self, photo: PhotoURL, db: Session) -> None:
+
+        db.delete(photo)
+
+        result = CloudImage.delete_image(photo.file_url)
+        if result:
+            db.rollback()
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
+
+        db.commit()
+
+
+    async def delete_all_transform_photo(self, photo: Photo, db: Session) -> None:
+
+        photos_to_del = db.query(PhotoURL).filter(PhotoURL.photo_id == photo.id).all()
+
+        query = delete(PhotoURL).where(PhotoURL.photo_id == photo.id)
+        db.execute(query)
+
+        for one_photo in photos_to_del:
+            result = CloudImage.delete_image(one_photo.file_url)
+
+            if result:
+                db.rollback()
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
+
+        db.commit()
+
