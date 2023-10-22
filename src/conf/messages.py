@@ -16,6 +16,8 @@ EMAIL_CONFIRMED = "Email confirmed"
 CHECK_YOUR_EMAIL_FOR_CONFIRMATION = "Check your email for confirmation"
 OPERATION_NOT_AVAILABLE = "Operation is not available"
 PHOTO_NOT_FOUND = "Photo not found"
+TRANS_PHOTO_NOT_FOUND = "Transformation Photo not found"
+TRANS_PHOTO_NOT_SPECIFIED = "Photo transformation is not specified"
 MAXIMUM_TAGS_COUNT=f"You can add a maximum of {MAX_TAGS_COUNT} tags"
 
 NO_MORE_THAN_10_REQUESTS_PER_MINUTE = "No more than 10 requests per minute"

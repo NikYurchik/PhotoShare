@@ -30,7 +30,7 @@ class TagRepository:
         return new_tag
 
 
-    async def add_tags_to_photo(self, tags: List[str], photo_id: int, session: Session) -> List[Tag]:
+    async def add_tags_to_photo(self, tags: List[str], photo_id: int, session: Session, is_commit: bool=True) -> List[Tag]:
         """
         Add tags to a photo
         Args:
@@ -46,7 +46,8 @@ class TagRepository:
             query = insert(t2p).values(tag_id=tag_.id, photo_id=photo_id).returning(t2p)
             add_tag_to_db = session.execute(query)
             result.append(tag_)
-        session.commit()
+        if is_commit:
+            session.commit()
         return result
 
 

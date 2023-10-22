@@ -5,8 +5,8 @@ from fastapi import HTTPException, status
 
 from src.conf import messages
 from src.schemas import CommentModel, CommentUpdate, CommentDelete
-from src.database.models import Comment, User
-from src.repository.photos import get_photo_by_id
+from src.database.models import Comment, User, Photo
+# from src.repository.photos import get_photo_by_id
 
 
 async def get_comments(photo_id: int, db: Session) -> List[Comment]:
@@ -38,7 +38,7 @@ async def create_comment(photo_id: int, body: CommentModel, user: User, db: Sess
     Returns:
         Comment: The newly created comment.
     """
-    photo = await get_photo_by_id(photo_id, db)
+    photo = photo = db.query(Photo).filter(Photo.id == photo_id).first()
     comment = Comment(
         text=body.text,
         user=user,
@@ -71,12 +71,12 @@ async def update_comment(body: CommentUpdate, user: User, db: Session) -> Commen
             comment.text = body.text
             db.commit()
         else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
     return comment
 
 
-async def delete_comment(body: CommentDelete, db: Session) -> Comment | None:
+async def delete_comment(body: CommentDelete, user: User, db: Session) -> Comment | None:
     """
     Deletes a comment.
 
@@ -90,7 +90,10 @@ async def delete_comment(body: CommentDelete, db: Session) -> Comment | None:
     comment = db.query(Comment).filter(Comment.id == body.id).first()
 
     if comment:
-        db.delete(comment)
-        db.commit()
+        if user.id == comment.user_id:
+            db.delete(comment)
+            db.commit()
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
-    return comment
+    # return comment

@@ -56,8 +56,10 @@ def token2(client, user2, session, monkeypatch):
     return data["access_token"]
 
 
-def test_upload_photo(client, token, photo, monkeypatch):
+def test_upload_photo(client, token, photo_request, photo, monkeypatch):
     monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_image', MagicMock(return_value=photo["photo"]["file_url"]))
+
+    body = str(photo_request).replace("'", '"')
 
     f = './fileupload.tst'
     with open(f, 'wb') as tmp:
@@ -66,7 +68,7 @@ def test_upload_photo(client, token, photo, monkeypatch):
         response = client.post(
             "/api/photos/new",
             files={"photo_file": ("filename", tmp, "image/jpeg")},
-            data=photo["photo"],
+            data={"body": body},
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 201, response.text
@@ -80,8 +82,9 @@ def test_upload_photo(client, token, photo, monkeypatch):
         assert "id" in data["photo"]
 
 
-def test_get_all_photos(client, token, user, photos, monkeypatch):
-    test_upload_photo(client, token, photos[1], monkeypatch)
+def test_get_all_photos(client, token, user, photo_request, photos, monkeypatch):
+    photo_request["description"] = photos[1]["photo"]["description"]
+    test_upload_photo(client, token, photo_request, photos[1], monkeypatch)
 
     response = client.get("/api/photos/all",
                             headers={"Authorization": f"Bearer {token}"})
@@ -117,7 +120,14 @@ def test_get_photo_by_user_notfound(client, token, user, photos, monkeypatch):
 
 
 def test_search_photos(client, token, user, photos, monkeypatch):
-    response = client.get("/api/photos/search/?keyword=es",
+    body = {
+            "keyword": "es",
+            "tag": "tags1",
+            "order_by": ""
+            }
+    
+    response = client.get("/api/photos/search",
+                            params=body,
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200, response.text
@@ -150,8 +160,9 @@ def test_get_photo_by_id_notfound(client, token, user, photos, monkeypatch):
 
 
 def test_update_photo_description(client, token, user, photos, monkeypatch):
+    body = {"description": photos[0]["photo"]["description"]}
     response = client.put("/api/photos/2",
-                            data={"description": photos[0]["photo"]["description"]},
+                            json=body,
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200, response.text
@@ -165,8 +176,9 @@ def test_update_photo_description(client, token, user, photos, monkeypatch):
 
 
 def test_update_photo_description_notfound(client, token, user, photos, monkeypatch):
+    body = {"description": photos[0]["photo"]["description"]}
     response = client.put("/api/photos/999",
-                            data={"description": photos[0]["photo"]["description"]},
+                            json=body,
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 404, response.text
@@ -174,9 +186,10 @@ def test_update_photo_description_notfound(client, token, user, photos, monkeypa
     assert data["detail"] == messages.PHOTO_NOT_FOUND
 
 
-def test_get_update_photo_description_noadmin(client, token2, user2, photos, session, monkeypatch):
+def test_update_photo_description_noadmin(client, token2, user2, photos, session, monkeypatch):
+    body = {"description": photos[0]["photo"]["description"]}
     response = client.put("/api/photos/2",
-                            data={"description": photos[1]["photo"]["description"]},
+                            json=body,
                             headers={"Authorization": f"Bearer {token2}"})
 
     assert response.status_code == 403, response.text

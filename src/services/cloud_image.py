@@ -51,3 +51,33 @@ class CloudImage:
         else:
             return "URL does not contain 'public_id' Cloudinary"
 
+
+    @staticmethod
+    def upload_transform_image(body, photo_file_url) -> str:
+
+        public_id = re.search(r"/v\d+/(.+)\.\w+$", photo_file_url).group(1)
+
+        url_changed_photo = cloudinary.CloudinaryImage(f"{public_id}").build_url(transformation=[
+            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
+            {'radius': body.radius},
+            {'effect': body.effect} if body.effect else None,
+            {'quality': body.quality},
+            {'fetch_format': body.fetch_format if body.fetch_format else re.search(r"\w+$", photo_file_url).group(
+                0)}
+        ])
+
+        return url_changed_photo
+
+
+    @staticmethod
+    def upload_qrcode(qr_os_path, qr_ci_folder, qr_name) -> str:
+
+        result = cloudinary.uploader.upload(
+            qr_os_path,
+            folder=qr_ci_folder,
+            resource_type="image",
+            public_id=f"{qr_name}"
+        )
+
+        return result['url']
+

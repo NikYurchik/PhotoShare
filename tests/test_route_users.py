@@ -38,7 +38,7 @@ def test_get_users_forbidden(client, token, user, monkeypatch):
 
         assert response.status_code == 403, response.text
         data = response.json()
-        assert data["detail"] == messages.FORBIDDEN
+        assert data["detail"] == messages.OPERATION_NOT_AVAILABLE
 
 
 def test_get_users(client, token, user, session, monkeypatch):
