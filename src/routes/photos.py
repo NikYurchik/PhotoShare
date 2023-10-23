@@ -66,6 +66,22 @@ async def upload_photo(body: PhotoNewModel = Body(...),
     return await PhotosRepository().upload_new_photo(body.description, tags_list, photo_file, current_user, db)
 
 
+@router.post('/add-tag-to-photo', response_model=PhotoResponse, dependencies=[Depends(allowed_operation_all)])
+async def add_tag_to_photo(photo_id: int,
+                           tag: str,
+                           current_user: User = Depends(auth_service.get_current_user),
+                           db: Session = Depends(get_db)):
+    return await PhotosRepository().add_tag_to_photo(tag, photo_id, current_user, db)
+
+
+@router.post('/remove-tag-from-photo', response_model=PhotoResponse, dependencies=[Depends(allowed_operation_all)])
+async def add_tag_to_photo(photo_id: int,
+                           tag: str,
+                           current_user: User = Depends(auth_service.get_current_user),
+                           db: Session = Depends(get_db)):
+    return await PhotosRepository().remove_tag_from_photo(tag, photo_id, current_user, db)
+
+
 @router.put('/{photo_id}', response_model=PhotoResponse, dependencies=[Depends(allowed_operation_all)])
 async def update_photo_description(photo_id: int,
                                    body: PhotoUpdateModel,

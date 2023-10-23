@@ -8,11 +8,12 @@ from sqlalchemy import insert, select, update, delete, desc, asc
 from sqlalchemy.orm import Session
 from cloudinary import uploader
 
-from src.database.models import Role, Photo, User, PhotoURL, tag_photo_association as t2p, Tag
+from src.database.models import Role, Photo, User, PhotoURL, Tag, tag_photo_association as t2p
 from src.repository.tags import TagRepository
-from src.schemas import PhotoUpdateModel, PhotoTransformModel, PhotoQRCodeModel
+from src.schemas import PhotoUpdateModel, PhotoTransformModel, PhotoQRCodeModel, PhotoResponse
 from src.conf import messages
 from src.services.cloud_image import CloudImage
+from src.services.validators import Validator
 
 
 class PhotosRepository:
@@ -57,6 +58,64 @@ class PhotosRepository:
         except Exception as e:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+    async def add_tag_to_photo(self, tag: str, photo_id: int, current_user: User, session: Session) -> PhotoResponse:
+        """
+        Add a tag to a photo and return the updated photo.
+
+        Args:
+            tag (str): The name of the tag to be added.
+            photo_id (int): The ID of the photo to which the tag should be added.
+            current_user (User): The current user performing the action.
+            session (Session): The SQLAlchemy session.
+
+        Returns:
+            PhotoResponse: A response object containing the updated photo information.
+
+        Raises:
+            HTTPException: If the tag count validation fails or the tag does not exist.
+
+        Example:
+            photo = await add_tag_to_photo("nature", 1, current_user, session)
+        """
+        photo = await self.get_photo_by_id(photo_id, current_user, session)
+        await Validator().validate_tags_count(tags_str='', tags=photo['tags'])
+        tag_ = await TagRepository().check_tag_exist_or_create(tag, session)
+        query = insert(t2p).values(tag_id=tag_.id, photo_id=photo['photo'].id).returning(t2p)
+        session.execute(query)
+        session.commit()
+        photo['tags'].append(tag_)
+        return photo
+
+    async def remove_tag_from_photo(self, tag: str, photo_id: int, current_user: User,
+                                    session: Session) -> PhotoResponse:
+        """
+        Remove a tag from a photo and return the updated photo.
+
+        Args:
+            tag (str): The name of the tag to be removed.
+            photo_id (int): The ID of the photo from which the tag should be removed.
+            current_user (User): The current user performing the action.
+            session (Session): The SQLAlchemy session.
+
+        Returns:
+            PhotoResponse: A response object containing the updated photo information.
+
+        Raises:
+            HTTPException: If the tag does not exist or could not be removed.
+
+        Example:
+            updated_photo = await remove_tag_from_photo("landscape", 1, current_user, session)
+        """
+        photo = await self.get_photo_by_id(photo_id, current_user, session)
+        query = select(Tag).where(Tag.name == tag)
+        tag_ = session.execute(query).scalar_one_or_none()
+        if not tag_:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.TAG_NOT_FOUND)
+        query = delete(t2p).where(t2p.c.tag_id == tag_.id, t2p.c.photo_id == photo['photo'].id)
+        session.execute(query)
+        session.commit()
+        photo['tags'].remove(tag_)
+        return photo
 
     async def delete_photo(self, photo_id: int, current_user: User, session: Session) -> None:
         """
@@ -83,7 +142,6 @@ class PhotosRepository:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
         session.commit()
 
-
     async def get_photo_by_id(self, photo_id: int, current_user: User, session: Session) -> Optional[Photo]:
         """
         Retrieve a photo with the given photo_id associated with the user
@@ -103,7 +161,6 @@ class PhotosRepository:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
         tags = await TagRepository().get_tags_photo(photo_id, session)
         return {"photo": photo, "tags": tags}
-
 
     async def update_photo_description(self, photo_id: int, description: str,
                                        current_user: User, session: Session) -> Optional[Photo]:
@@ -138,7 +195,6 @@ class PhotosRepository:
         tags = await TagRepository().get_tags_photo(photo_id, session)
         return {"photo": photo, "tags": tags}
 
-
     async def get_all_photos(self, page: int, per_page: int, session: Session) -> List[Photo]:
         """
         Retrieve a list of photos with pagination, sorted from newest to oldest
@@ -159,8 +215,8 @@ class PhotosRepository:
         # print(result)
         return result
 
-
-    async def get_photos_by_user(self, user_id: int | None, current_user: User, page: int, per_page: int, session: Session) -> List[Photo]:
+    async def get_photos_by_user(self, user_id: int | None, current_user: User, page: int, per_page: int,
+                                 session: Session) -> List[Photo]:
         """
         Retrieve a list of photos uploaded by a specific user with pagination, sorted from newest to oldest
         Args:
@@ -175,14 +231,14 @@ class PhotosRepository:
         offset = (page - 1) * per_page
         if user_id is None:
             user_id = current_user.id
-        query = select(Photo).where(Photo.user_id == user_id).order_by(desc(Photo.created_at)).offset(offset).limit(per_page)
+        query = select(Photo).where(Photo.user_id == user_id).order_by(desc(Photo.created_at)).offset(offset).limit(
+            per_page)
         photos = session.execute(query).scalars().all()
         for photo in photos:
             tags = tags = await TagRepository().get_tags_photo(photo.id, session)
             result.append({"photo": photo, "tags": tags})
         # print(result)
         return result
-
 
     async def search_photos(self, keyword: str, tag: str, order_by: str, session: Session):
         """
@@ -229,7 +285,6 @@ class PhotosRepository:
         return result
         # return photos
 
-
     async def upload_transform_photo(self, body: PhotoTransformModel, photo: Photo,
                                      db: Session) -> Photo:
 
@@ -238,7 +293,7 @@ class PhotosRepository:
         photourl = db.query(PhotoURL).filter(PhotoURL.file_url == url_changed_photo).first()
         if photourl:
             return photourl
-        
+
         try:
             new_photo = PhotoURL(file_url=url_changed_photo, photo=photo)
             db.add(new_photo)
@@ -248,11 +303,10 @@ class PhotosRepository:
             s = str(err)
             s = s[0:s.index("\n")]
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=s)
-        
+
         return new_photo
 
-
-    async def update_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL, is_transform: bool=False) -> str:
+    async def update_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL, is_transform: bool = False) -> str:
         qr_name = f"c{photo.id}" if is_transform else f"b{photo.id}"
         qr_extension = "png"
 
@@ -280,7 +334,6 @@ class PhotosRepository:
         await aiofiles.os.remove(qr_os_path)
         return photo_qr_url
 
-
     async def update_photo_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL,
                                   db: Session) -> Photo | PhotoURL:
         if not photo.qr_url:
@@ -292,15 +345,13 @@ class PhotosRepository:
         return {"photo": photo, "tags": tags}
         # return photo
 
-
     async def update_transphoto_qr_url(self, body: PhotoQRCodeModel, photo: Photo | PhotoURL,
-                                  db: Session) -> Photo | PhotoURL:
+                                       db: Session) -> Photo | PhotoURL:
         if not photo.qr_url:
             photo_qr_url = await self.update_qr_url(body, photo, True)
             photo.qr_url = photo_qr_url
             db.commit()
         return photo
-
 
     async def delete_transform_photo(self, photo: PhotoURL, db: Session) -> None:
 
@@ -312,7 +363,6 @@ class PhotosRepository:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
 
         db.commit()
-
 
     async def delete_all_transform_photo(self, photo: Photo, db: Session) -> None:
 
@@ -329,4 +379,3 @@ class PhotosRepository:
                 raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=result)
 
         db.commit()
-
