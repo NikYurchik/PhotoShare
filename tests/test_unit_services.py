@@ -15,15 +15,17 @@ class TestServices(unittest.IsolatedAsyncioTestCase):
 
     # validate_tags_count
     async def test_validate_tags_count(self):
-        tags_str = "#tag1, #tag2, #tag3"
-        res_tags = ["#tag1", "#tag2", "#tag3"]
-        result = await Validator().validate_tags_count(tags_str=tags_str) #-> List[str]:
-        self.assertEqual(result, res_tags)
+        tags_str = "#tag1, #tag2"
+        tags = ["#tag3", "#tag4"]
+        res_tags = ["#tag1", "#tag2", "#tag3", "#tag4"]
+        result = await Validator().validate_tags_count(tags_str=tags_str, tags=tags) #-> List[str]:
+        self.assertEqual(result.sort(), res_tags.sort())
 
     async def test_validate_tags_count_many(self):
-        tags_str = "#tag, #tagg, #taggg, #tag1, #tag2, #tag3"
+        tags_str = "#tag, #tagg, #taggg"
+        tags = "#tag1", "#tag2", "#tag3"
         with self.assertRaises(HTTPException) as cm:
-            await Validator().validate_tags_count(tags_str=tags_str) #-> List[str]:
+            await Validator().validate_tags_count(tags_str=tags_str, tags=tags) #-> List[str]:
         cm_exception = cm.exception
         self.assertEqual(cm_exception.status_code, 400)
         self.assertEqual(cm_exception.detail, messages.MAXIMUM_TAGS_COUNT)

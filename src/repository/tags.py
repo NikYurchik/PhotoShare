@@ -30,7 +30,7 @@ class TagRepository:
         return new_tag
 
 
-    async def add_tags_to_photo(self, tags: List[str], photo_id: int, session: Session) -> List[Tag]:
+    async def add_tags_to_photo(self, tags: List[str], photo_id: int, session: Session, is_commit: bool=True) -> List[Tag]:
         """
         Add tags to a photo
         Args:
@@ -42,11 +42,22 @@ class TagRepository:
         """
         result = []
         for tag in tags:
-            tag_ = await TagRepository().check_tag_exist_or_create(tag, session)    # -> Tag
-            query = insert(t2p).values(tag_id=tag_.id, photo_id=photo_id).returning(t2p)
-            add_tag_to_db = session.execute(query)
+            query = select(Tag).where(Tag.name == tag)
+            tag_ = session.execute(query).scalar_one_or_none()
+            if not tag_:
+                query_ = insert(Tag).values(name=tag).returning(Tag)
+                tag_ = session.execute(query_).scalar_one()
+            
+            try:
+                query = insert(t2p).values(tag_id=tag_.id, photo_id=photo_id).returning(t2p)
+                add_tag_to_db = session.execute(query)
+            except Exception as err:
+                if str(err).find("duplicate key") < 0:
+                    raise
+                
             result.append(tag_)
-        session.commit()
+        if is_commit:
+            session.commit()
         return result
 
 
@@ -55,4 +66,18 @@ class TagRepository:
         tags = session.execute(tquery).scalars().all()
         return tags 
 
+
+    async def get_different_tags(self, tags: List[str], tags_photo: List[Tag]) -> (List[str], List[str]):
+        diff_list = tags
+        tags_list = []
+        for tag in tags_photo:
+            tags_list.append(tag.name)
+            try:
+                idx = diff_list.index(tag.name)
+                diff_list.pop(idx)
+            except ValueError:
+                pass
+            tags_list.extend(diff_list)
+
+        return diff_list, tags_list
 

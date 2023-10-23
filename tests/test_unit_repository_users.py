@@ -1,5 +1,3 @@
-import os
-
 import unittest
 from unittest.mock import MagicMock
 
@@ -32,7 +30,6 @@ class TestUsers(unittest.IsolatedAsyncioTestCase):
     #     return super().setUpClass()
 
     def setUp(self):
-        # self.logs = open(f"logs/{self._testMethodName}.log", mode="w", encoding="utf-8")
         self.session = MagicMock(spec=Session)
         self.gravatar = MagicMock(spec=Gravatar)
         self.gravatar.get_image = MagicMock(spec=Gravatar.get_image)

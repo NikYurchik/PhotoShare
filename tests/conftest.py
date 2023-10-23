@@ -58,17 +58,22 @@ def user():
 
 
 @pytest.fixture(scope="module")
+def photo_request():
+    return {"description": "photo_description",
+            # "tag_str": "tag1, tag2",
+            # "tags": ["tags1", "tags2"]
+            "tag_str": "",
+            "tags": []
+            }
+
+
+@pytest.fixture(scope="module")
 def photo():
-    # return {"user_id": "1",
-    #         "file_url": "https://gravatar.com/image.png",
-    #         "description": "Test photo",
-    #         "tag_str": "tag1, tag2",
-    #         "tags": ["tags1", "tags2"]
-    #         }
     return {
                 "photo": {
                     "id": 1,
                     "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697427418/upload/vplnv9bplyylkvyomdgd.jpg",
+                    "qr_url": "http://res.cloudinary.com/dqglsxwms/image/upload/v1697860722/upload/qr/b4.png",
                     "description": "photo_description",
                     "user_id": "1"
                 },
@@ -124,3 +129,9 @@ def photos():
 
 #     with open(f"logs/{request.node.name}.log", mode="w", encoding="utf-8") as log:
 #         yield log
+# TestClient.get()
+# TestClient.post()
+# TestClient.put()
+# TestClient.patch()
+# TestClient.delete()
+

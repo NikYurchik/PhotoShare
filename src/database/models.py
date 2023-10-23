@@ -6,7 +6,6 @@ from sqlalchemy.sql.schema import ForeignKey, Table
 
 Base = declarative_base()
 
-
 class Role(enum.Enum):
     admin: str = 'admin'
     moderator: str = 'moderator'
@@ -49,8 +48,9 @@ tag_photo_association = Table(
     'tag_m2m_photo',
     Base.metadata,
     Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE')),
-    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE'))
-)
+    Column('photo_id', Integer, ForeignKey('photos.id', ondelete='CASCADE')),
+    UniqueConstraint("tag_id", "photo_id", name="uq_tag_m2m_photo"),
+ )
 
 # class Tag2Photo(Base):
 #     __tablename__ = "tag_m2m_photo"

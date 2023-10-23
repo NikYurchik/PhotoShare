@@ -5,8 +5,7 @@ from fastapi import HTTPException, status
 
 from src.conf import messages
 from src.schemas import CommentModel, CommentUpdate, CommentDelete
-from src.database.models import Comment, User
-from src.repository.photos import get_photo_by_id
+from src.database.models import Comment, User, Photo, Role
 
 
 async def get_comments(photo_id: int, db: Session) -> List[Comment]:
@@ -38,7 +37,10 @@ async def create_comment(photo_id: int, body: CommentModel, user: User, db: Sess
     Returns:
         Comment: The newly created comment.
     """
-    photo = await get_photo_by_id(photo_id, db)
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    if not photo:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
+    
     comment = Comment(
         text=body.text,
         user=user,
@@ -71,12 +73,12 @@ async def update_comment(body: CommentUpdate, user: User, db: Session) -> Commen
             comment.text = body.text
             db.commit()
         else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.FORBIDDEN)
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
     return comment
 
 
-async def delete_comment(body: CommentDelete, db: Session) -> Comment | None:
+async def delete_comment(comment_id: int, user: User, db: Session) -> Comment | None:
     """
     Deletes a comment.
 
@@ -87,10 +89,12 @@ async def delete_comment(body: CommentDelete, db: Session) -> Comment | None:
     Returns:
         Comment | None: The deleted comment, or None if the comment does not exist.
     """
-    comment = db.query(Comment).filter(Comment.id == body.id).first()
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
 
     if comment:
-        db.delete(comment)
-        db.commit()
+        if user.id == comment.user_id or user.roles in [Role.admin, Role.moderator]:
+            db.delete(comment)
+            db.commit()
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
-    return comment
