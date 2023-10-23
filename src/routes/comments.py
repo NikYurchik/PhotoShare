@@ -52,13 +52,13 @@ async def update_comment(body: CommentUpdate,
     return comment
 
 
-@router.delete('/', #response_model=CommentResponse,
+@router.delete('/{comment_id}', #response_model=CommentResponse,
                 status_code=204,
                 dependencies=[Depends(allowed_operation_nouser), Depends(RateLimiter(times=10, seconds=60))])
-async def delete_comment(body: CommentDelete,
+async def delete_comment(comment_id: int,
                          user: User = Depends(auth_service.get_current_user),
                          db: Session = Depends(get_db)):
-    comment = await repository_comments.delete_comment(body, user, db)
+    comment = await repository_comments.delete_comment(comment_id, user, db)
 
     # if comment is None:
     #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)

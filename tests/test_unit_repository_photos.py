@@ -149,11 +149,11 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
         cm_exception = cm.exception
         self.assertEqual(cm_exception.status_code, 400)
 
-    @patch("src.repository.tags.TagRepository.check_tag_exist_or_create")
+    @patch("src.repository.tags.TagRepository.add_tags_to_photo")
     @patch("src.services.cloud_image.CloudImage.upload_image")
     async def test_upload_new_photo(self, mock_upload, mock_tag):
         mock_upload.return_value = self.photo.file_url
-        mock_tag.return_value = self.tag
+        mock_tag.return_value = self.tags
         self.session.execute().scalar_one.return_value = self.photo
         self.session.commit.return_value = None
         self.session.execute().return_value = None
@@ -161,7 +161,7 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
                                                            photo_file=self.uploadfile, current_user=self.user, session=self.session)
         self.assertEqual(result.get('photo'), self.result_photo.get('photo'))
         self.assertEqual(result.get('tags')[0], self.result_photo.get('tags')[0])
-        self.assertEqual(result.get('tags')[1], self.result_photo.get('tags')[0])
+        self.assertEqual(result.get('tags')[1], self.result_photo.get('tags')[1])
 
 
     # update_photo_description
@@ -209,10 +209,13 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
 
 
     # add_tags_to_photo
-    @patch("src.repository.tags.TagRepository.check_tag_exist_or_create")
-    async def test_add_tags_to_photo(self, mock_tag):
-        mock_tag.return_value = self.tag
+    # @patch("src.repository.tags.TagRepository.check_tag_exist_or_create")
+    # async def test_add_tags_to_photo(self, mock_tag):
+        # mock_tag.return_value = self.tag
+    async def test_add_tags_to_photo(self):
         self.session.execute().return_value = None
+        self.session.execute().scalar_one.return_value = self.tag
+        self.session.execute().scalar_one_or_none.return_value = None
         result = await TagRepository().add_tags_to_photo(tags=[self.tag.name], photo_id=1, session=self.session)
         self.assertEqual(result, [self.tag])
 

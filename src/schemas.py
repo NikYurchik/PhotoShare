@@ -83,6 +83,11 @@ class TagDetail(BaseModel):
     name: str
 
 
+class PhotoAddTagsModel(BaseModel):
+    tag_str: Optional[str]
+    tags: Optional[List[str]]
+
+
 class PhotoResponse(BaseModel):
     photo: PhotoSchema
     tags: Optional[List[TagDetail]]
@@ -135,7 +140,7 @@ class PhotoTransformModel(BaseModel):
     radius: str | None = "0"            # радиус закругления углов
     effect: str | None = None           # Эффекты и улучшения изображений
     quality: str | None = "auto"        # % потери качества при сжатии
-    fetch_format: str | None = None     # Преобразование анимированного GIF в видео
+    fetch_format: str | None = None     # Преобразование фото в определенный формат
 
 
 class PhotoQRCodeModel(BaseModel):
