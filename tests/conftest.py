@@ -73,6 +73,7 @@ def photo():
                 "photo": {
                     "id": 1,
                     "file_url": "https://res.cloudinary.com/dqglsxwms/image/upload/v1697427418/upload/vplnv9bplyylkvyomdgd.jpg",
+                    "qr_url": "http://res.cloudinary.com/dqglsxwms/image/upload/v1697860722/upload/qr/b4.png",
                     "description": "photo_description",
                     "user_id": "1"
                 },

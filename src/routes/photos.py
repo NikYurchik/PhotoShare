@@ -8,7 +8,8 @@ from src.database.db import get_db
 from src.database.models import User, Role, Photo, PhotoURL
 from src.repository.photos import PhotosRepository
 from src.schemas import PhotoResponse, PhotoUpdateModel, PhotoNewModel, PhotoTransformModel, \
-                        PhotoQRCodeModel, PhotoURLResponse, PhotoTransQRCodeModel, PhotoSearchModel
+                        PhotoQRCodeModel, PhotoURLResponse, PhotoTransQRCodeModel, PhotoSearchModel, \
+                        PhotoAddTagsModel
 from src.services.auth import auth_service
 from src.services.validators import Validator
 from src.services.roles import RoleAccess
@@ -66,6 +67,23 @@ async def upload_photo(body: PhotoNewModel = Body(...),
     return await PhotosRepository().upload_new_photo(body.description, tags_list, photo_file, current_user, db)
 
 
+@router.post('/add-tags', response_model=PhotoResponse, dependencies=[Depends(allowed_operation_all)])
+async def add_tag_to_photo(photo_id: int,
+                           body: PhotoAddTagsModel,
+                           current_user: User = Depends(auth_service.get_current_user),
+                           db: Session = Depends(get_db)):
+    tags_list = await Validator().validate_tags_count(body.tag_str, body.tags)
+    return await PhotosRepository().add_tag_to_photo(tags_list, photo_id, current_user, db)
+
+
+@router.post('/remove-tag', response_model=PhotoResponse, dependencies=[Depends(allowed_operation_all)])
+async def add_tag_to_photo(photo_id: int,
+                           tag: str,
+                           current_user: User = Depends(auth_service.get_current_user),
+                           db: Session = Depends(get_db)):
+    return await PhotosRepository().remove_tag_from_photo(tag, photo_id, current_user, db)
+
+
 @router.put('/{photo_id}', response_model=PhotoResponse, dependencies=[Depends(allowed_operation_all)])
 async def update_photo_description(photo_id: int,
                                    body: PhotoUpdateModel,
@@ -93,28 +111,10 @@ async def photo_transform(body: PhotoTransformModel, photo_id: int,
     if base_photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
 
-    # if user.roles != Role.admin and base_photo.user_id != user.id:
     if base_photo.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
-    # if body.transform_photo_id:
-    #     try:
-    #         transform_photo_id = int(body.transform_photo_id)
-    #     except ValueError:
-    #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-    #                             detail=f"Invalid value of the 'transform_photo_id' parameter: "
-    #                                    f"'{body.transform_photo_id}'. It must have a numeric value.")
-
-    #     photo = db.query(PhotoURL).filter(and_(PhotoURL.photo_id == photo_id,
-    #                                            PhotoURL.id == transform_photo_id)).first()
-
-    #     if photo is None:
-    #         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
-    # else:
-    #     photo = base_photo
-
     return await PhotosRepository().upload_transform_photo(body, base_photo, db)
-    # return await PhotosRepository().upload_transform_photo(body, base_photo, photo, db)
 
 
 @router.post("/qrcode/{photo_id}",
@@ -139,8 +139,8 @@ async def create_qrcode(body: PhotoQRCodeModel, photo_id: int,
              response_model=PhotoURLResponse,
              description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
              dependencies=[Depends(allowed_operation_all), Depends(RateLimiter(times=10, seconds=60))])
-async def create_qrcode(body: PhotoTransQRCodeModel, photo_id: int,
-                        user: User = Depends(auth_service.get_current_user), db: Session = Depends(get_db)):
+async def create_trans_qrcode(body: PhotoTransQRCodeModel, photo_id: int,
+                              user: User = Depends(auth_service.get_current_user), db: Session = Depends(get_db)):
 
     base_photo = db.query(Photo).filter(Photo.id == photo_id).first()
 
