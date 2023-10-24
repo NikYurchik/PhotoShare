@@ -1,19 +1,21 @@
 from fastapi import APIRouter, Depends, UploadFile, File
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.database.models import User
+from src.database.models import User, Photo
 from src.repository import users as repository_users
 from src.services.auth import auth_service
-from src.schemas import UserDb
+from src.schemas import UserDb, UserDbResponse
 from src.services.cloud_image import CloudImage
 
 
 router = APIRouter(prefix="", tags=["myuser"])
 
 
-@router.get("/", response_model=UserDb)
-async def read_users_me(current_user: User = Depends(auth_service.get_current_user)):
+@router.get("/", response_model=UserDbResponse)
+async def read_users_me(current_user: User = Depends(auth_service.get_current_user),
+                        db: Session = Depends(get_db)):
     """
     The read_users_me function returns the current user's information.
         get:
@@ -27,11 +29,10 @@ async def read_users_me(current_user: User = Depends(auth_service.get_current_us
     :return: The current user object, which is passed as a parameter to the function
     :doc-author: Python-WEB13-project-team-2
     """
-    # print(f"read_users_me: ")
-    return current_user
+    result = await repository_users.get_user_info(current_user.id, db)
+    return result
 
-
-@router.patch('/', response_model=UserDb)
+@router.patch('/', response_model=UserDbResponse)
 async def update_avatar_user(file: UploadFile = File(),
                              current_user: User = Depends(auth_service.get_current_user),
                              db: Session = Depends(get_db)):
@@ -52,7 +53,10 @@ async def update_avatar_user(file: UploadFile = File(),
         result = CloudImage.delete_image(current_user.avatar)
         if result:
             print(f"Update_Avatar_User: {result}")
+
     src_url = CloudImage.upload_image(photo_file=file.file, user=current_user, folder=f"avatar/{current_user.username}")
     user = await repository_users.update_avatar(current_user, src_url, db)
-    return user
+
+    result = await repository_users.get_user_info(user.id, db)
+    return result
 

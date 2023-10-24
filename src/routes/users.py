@@ -42,6 +42,7 @@ async def get_users(limit: int = Query(10, le=50), offset: int = 0, search_mask:
             dependencies=[Depends(allowed_operation_notuser), Depends(RateLimiter(times=10, seconds=60))])
 async def get_user(user_id: int = Path(ge=1), db: Session = Depends(get_db),
                    current_user: User = Depends(auth_service.get_current_user)):
+    # user = await repository_users.get_user_by_id(user_id, db)
     user = await repository_users.get_user_by_id(user_id, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.NOT_FOUND)

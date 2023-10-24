@@ -1,48 +1,83 @@
 from datetime import datetime
+from typing import List
 
 from libgravatar import Gravatar
 from sqlalchemy.orm import Session
-from sqlalchemy import between, and_, or_
+from sqlalchemy import func, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.db import DBSession
-from src.database.models import User, UserRole
-from src.schemas import UserModel
+from src.database.models import User, UserRole, Photo
+from src.schemas import UserModel, UserDbResponse, UserDbAdmin
 
 
-async def get_users(limit: int, offset: int, db: Session):
-    users = db.query(User).limit(limit).offset(offset).all()
-    return users
+async def get_users(limit: int, offset: int, session: Session) -> List[UserDbAdmin]:
+    res = session.query(User.id, 
+                        User.username,
+                        User.email,
+                        User.created_at,
+                        User.avatar,
+                        User.roles,
+                        User.confirmed,
+                        User.is_banned,
+                        func.count(Photo.user_id).label('photo_count')) \
+                .select_from(User) \
+                .join(Photo, isouter=True) \
+                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) \
+                .limit(limit).offset(offset).all()
+    return res
 
 
-async def get_users_by_mask(limit: int, offset: int, search_mask:str, db: Session):
-    users = db.query(User).\
-            filter(or_(User.username.like(search_mask), User.email.like(search_mask))).\
-            limit(limit).offset(offset).all()
-    return users
+async def get_users_by_mask(limit: int, offset: int, search_mask:str, session: Session) -> List[UserDbAdmin]:
+    res = session.query(User.id, 
+                        User.username,
+                        User.email,
+                        User.created_at,
+                        User.avatar,
+                        User.roles,
+                        User.confirmed,
+                        User.is_banned,
+                        func.count(Photo.user_id).label('photo_count')) \
+                .select_from(User) \
+                .join(Photo, isouter=True) \
+                .filter(or_(User.username.like(search_mask), User.email.like(search_mask)))\
+                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) \
+                .limit(limit).offset(offset).all()
+    return res
 
 
-async def get_user_by_id(user_id: int, db: Session):
+async def toggle_banned_user(user_id: int, db: Session) -> UserDbAdmin:
     user = db.query(User).filter(User.id == user_id).first()
-    return user
-
-
-async def toggle_banned_user(user_id: int, db: Session) -> User:
-    # print(f"toogle_ban user_id: {user_id}")
-    user = await get_user_by_id(user_id, db)
     if user:
         user.is_banned = not user.is_banned
         db.commit()
-    return user
+    return await get_user_by_id(user_id, db)
 
 
-async def set_roles_user(user_id: int, role: UserRole, db: Session) -> User:
-    # print(f"toogle_ban user_id: {user_id}")
-    user = await get_user_by_id(user_id, db)
+async def set_roles_user(user_id: int, role: UserRole, db: Session) -> UserDbAdmin:
+    user = db.query(User).filter(User.id == user_id).first()
     if user:
         user.roles = role
         db.commit()
-    return user
+    return await get_user_by_id(user_id, db)
+
+
+async def get_user_by_id(user_id: int, session: Session) -> UserDbAdmin:
+    res = session.query(User.id, 
+                        User.username,
+                        User.email,
+                        User.created_at,
+                        User.avatar,
+                        User.roles,
+                        User.confirmed,
+                        User.is_banned,
+                        func.count(Photo.user_id).label('photo_count')) \
+                .select_from(User) \
+                .join(Photo, isouter=True) \
+                .filter(User.id == user_id) \
+                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) \
+                .first()
+    return res
 
 
 async def get_user_by_email(email: str, db: Session) -> User:
@@ -114,7 +149,7 @@ async def confirmed_email(email: str, db: Session) -> None:
     db.commit()
 
 
-async def update_avatar(user: User, url: str, db: Session) -> User:
+async def update_avatar(user: User, url: str, db: Session) -> UserDbResponse:
     """
     The update_avatar function updates the avatar of a user.
     
@@ -131,32 +166,21 @@ async def update_avatar(user: User, url: str, db: Session) -> User:
     """
     user.avatar = url
     db.commit()
-    return user
+    return await get_user_info(user.id, db)
 
 
-# async def check_user_admin():
-#     NULL_DATE = datetime.now().replace(day=1)
-#     db = DBSession()
-#     try:
-#         user = db.query(User).filter(User.id == 1).first()
-#         if user:
-#             if user.avatar is None:
-#                 user.avatar = ""
-#             if user.created_at is None:
-#                 user.created_at = NULL_DATE
-#         else:
-#             new_user = User(username= "admin",
-#                             email="admin@email.com",
-#                             password="admin",
-#                             avatar="",
-#                             confirmed=True,
-#                             roles=Role.admin,
-#                             is_banned=False)
-#             db.add(new_user)
-#         db.commit()
-#     except SQLAlchemyError as err:
-#         db.rollback()
-#         raise err
-#     finally:
-#         db.close()
+async def get_user_info(user_id: int, session: Session) -> UserDbResponse:
+    res = session.query(User.id, 
+                        User.username,
+                        User.email,
+                        User.created_at,
+                        User.avatar,
+                        User.roles,
+                        func.count(Photo.user_id).label('photo_count')) \
+                .select_from(User) \
+                .join(Photo, isouter=True) \
+                .filter(User.id == user_id) \
+                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles) \
+                .first()
+    return res
     

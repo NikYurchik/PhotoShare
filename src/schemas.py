@@ -26,7 +26,11 @@ class UserDb(BaseModel):
         from_attributes = True
 
 
-class UserDbAdmin(UserDb):
+class UserDbResponse(UserDb):
+    photo_count: Optional[int] = 0
+
+
+class UserDbAdmin(UserDbResponse):
     confirmed: bool
     is_banned: bool
 
