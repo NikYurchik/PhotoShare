@@ -22,14 +22,8 @@ def token(client, user, session, monkeypatch):
 
 
 def test_read_myuser_me(client, token, user, monkeypatch):
-    # with patch.object(auth_service, "r") as redis_mock:
-    #     redis_mock.get.return_value = None
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
 
-        response = client.get("/api/myuser/me/",
+        response = client.get("/api/myuser",
                               headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == 200, response.text
@@ -40,24 +34,17 @@ def test_read_myuser_me(client, token, user, monkeypatch):
 
 def test_update_avatar_user(client, token, user, monkeypatch):
     USER_AVATAR = "http://cloudimage.com/image.png"
-    # with patch.object(auth_service, "r") as redis_mock:
-    #     redis_mock.get.return_value = None
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
-    if True:
-        monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_image', MagicMock(return_value=USER_AVATAR))
+    monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_image', MagicMock(return_value=USER_AVATAR))
 
-        f = './fileupload.tst'
-        with open(f, 'wb') as tmp:
-            tmp.write(b'upload this')
-        with open(f, 'rb') as tmp:
-            response = client.patch("/api/myuser/avatar",
-                                    files={"file": ("filename", tmp, "image/jpeg")},
-                                    headers={"Authorization": f"Bearer {token}"})
-            assert response.status_code == 200, response.text
-            data = response.json()
-            assert data["username"] == user["username"]
-            assert data["email"] == user["email"]
-            assert data["avatar"] == USER_AVATAR
+    f = './fileupload.tst'
+    with open(f, 'wb') as tmp:
+        tmp.write(b'upload this')
+    with open(f, 'rb') as tmp:
+        response = client.patch("/api/myuser",
+                                files={"file": ("filename", tmp, "image/jpeg")},
+                                headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["username"] == user["username"]
+        assert data["email"] == user["email"]
+        assert data["avatar"] == USER_AVATAR

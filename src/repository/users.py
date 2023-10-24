@@ -6,7 +6,7 @@ from sqlalchemy import between, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.db import DBSession
-from src.database.models import User, Role
+from src.database.models import User, UserRole
 from src.schemas import UserModel
 
 
@@ -36,7 +36,7 @@ async def toggle_banned_user(user_id: int, db: Session) -> User:
     return user
 
 
-async def set_roles_user(user_id: int, role: Role, db: Session) -> User:
+async def set_roles_user(user_id: int, role: UserRole, db: Session) -> User:
     # print(f"toogle_ban user_id: {user_id}")
     user = await get_user_by_id(user_id, db)
     if user:

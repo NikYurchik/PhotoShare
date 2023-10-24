@@ -3,7 +3,7 @@ import pytest
 
 from src.database.models import User
 from src.services.auth import auth_service
-from src.services.roles import Role
+from src.services.roles import UserRole
 from src.conf import messages
 
 
@@ -23,7 +23,7 @@ def token(client, user, session, monkeypatch):
     client.post("/api/auth/signup", json=user)
     current_user: User = session.query(User).filter(User.email == user.get('email')).first()
     current_user.confirmed = True
-    current_user.roles = Role.admin
+    current_user.roles = UserRole.admin
     session.commit()
     
     response = client.post(
@@ -42,15 +42,9 @@ def token(client, user, session, monkeypatch):
 
 
 def test_set_roles_user(client, token, user, monkeypatch):
-    # with patch.object(auth_service, 'r') as redis_mock:
-    #     redis_mock.get.return_value = None
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
 
         response = client.patch(
-            "/api/users/set_roles/2/?user_roles=moderator",
+            "/api/users/2/set_roles/?user_roles=moderator",
             json=USER2,
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -62,15 +56,9 @@ def test_set_roles_user(client, token, user, monkeypatch):
 
 
 def test_set_roles_user_notfound(client, token, user, monkeypatch):
-    # with patch.object(auth_service, 'r') as redis_mock:
-    #     redis_mock.get.return_value = None
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
 
         response = client.patch(
-            "/api/users/set_roles/999/?user_roles=moderator",
+            "/api/users/999/set_roles/?user_roles=moderator",
             json=user,
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -80,15 +68,9 @@ def test_set_roles_user_notfound(client, token, user, monkeypatch):
 
 
 def test_set_roles_user_forbidden(client, token, user, monkeypatch):
-    # with patch.object(auth_service, 'r') as redis_mock:
-    #     redis_mock.get.return_value = None
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.redis', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.identifier', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.FastAPILimiter.http_callback', AsyncMock())
-    #     monkeypatch.setattr('fastapi_limiter.depends.RateLimiter', AsyncMock())
 
         response = client.patch(
-            "/api/users/set_roles/1/?user_roles=moderator",
+            "/api/users/1/set_roles/?user_roles=moderator",
             json=user,
             headers={"Authorization": f"Bearer {token}"}
         )

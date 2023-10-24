@@ -1,11 +1,12 @@
 from typing import List
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from src.conf import messages
 from src.schemas import CommentModel, CommentUpdate, CommentDelete
-from src.database.models import Comment, User, Photo, Role
+from src.database.models import Comment, User, Photo, UserRole
 
 
 async def get_comments(photo_id: int, db: Session) -> List[Comment]:
@@ -54,7 +55,7 @@ async def create_comment(photo_id: int, body: CommentModel, user: User, db: Sess
     return comment
 
 
-async def update_comment(body: CommentUpdate, user: User, db: Session) -> Comment | None:
+async def update_comment(photo_id: int, comment_id: int, body: CommentModel, user: User, db: Session) -> Comment | None:
     """
     Updates a comment.
 
@@ -66,7 +67,7 @@ async def update_comment(body: CommentUpdate, user: User, db: Session) -> Commen
     Returns:
         Comment | None: The updated comment, or None if the comment does not exist.
     """
-    comment = db.query(Comment).filter(Comment.id == body.id).first()
+    comment = db.query(Comment).filter(and_(Comment.photo_id == photo_id, Comment.id == comment_id)).first()
 
     if comment:
         if user.id == comment.user_id:
@@ -74,11 +75,13 @@ async def update_comment(body: CommentUpdate, user: User, db: Session) -> Commen
             db.commit()
         else:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND)
 
     return comment
 
 
-async def delete_comment(comment_id: int, user: User, db: Session) -> Comment | None:
+async def delete_comment(photo_id: int, comment_id: int, user: User, db: Session) -> Comment | None:
     """
     Deletes a comment.
 
@@ -89,12 +92,15 @@ async def delete_comment(comment_id: int, user: User, db: Session) -> Comment | 
     Returns:
         Comment | None: The deleted comment, or None if the comment does not exist.
     """
-    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    comment = db.query(Comment).filter(and_(Comment.photo_id == photo_id, Comment.id == comment_id)).first()
 
     if comment:
-        if user.id == comment.user_id or user.roles in [Role.admin, Role.moderator]:
+        if user.id == comment.user_id or user.roles in [UserRole.admin, UserRole.moderator]:
             db.delete(comment)
             db.commit()
         else:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND)
+
 

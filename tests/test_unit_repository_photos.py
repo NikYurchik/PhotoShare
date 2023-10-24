@@ -9,7 +9,7 @@ from cloudinary import uploader
 
 from src.database.models import User, Photo, Tag
 from src.schemas import PhotoUpdateModel, PhotoResponse
-from src.services.roles import Role
+from src.services.roles import UserRole
 from src.repository.photos import PhotosRepository
 from src.repository.tags import TagRepository
 from src.conf import messages
@@ -20,13 +20,7 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = MagicMock(spec=Session)
         self.uploadfile = MagicMock(spec=UploadFile("fileupload.tst"))
-        # self.add_tags = MagicMock(spec=TagRepository.add_tags_to_photo, return_value=self.tags)
-
-        # self.uploader = MagicMock(spec=uploader)
-        # self.uploader.destroy = MagicMock(spec=uploader.destroy)
-        
-        self.user = User(id=1, username="username", email="test@mail.com", roles=Role.admin)
-
+        self.user = User(id=1, username="username", email="test@mail.com", roles=UserRole.admin)
         self.url_photo = "https://gravatar.com/image.png"
         self.description = "Test image"
         self.photo = Photo(id=1, user_id=1, file_url=self.url_photo, description=self.description)
@@ -45,9 +39,6 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
         self.session.execute().scalar_one_or_none.return_value = self.photo
         self.session.execute().scalars().all.return_value = self.tags
         result = await PhotosRepository().get_photo_by_id(photo_id=self.photo.id, current_user=self.user, session=self.session)
-        # print(self.photo)
-        # print(self.result_photo)
-        # print(result)
         self.assertEqual(result, self.result_photo)
 
 
@@ -67,10 +58,6 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
         mock_tags.return_value = self.tags
         self.session.execute().scalars().all.return_value = self.photos
         result = await PhotosRepository().get_all_photos(page=1, per_page=10, session=self.session)
-        # print(self.photo)
-        # print(self.photos)
-        # print(self.result_photos)
-        # print(result)
         self.assertEqual(result, self.result_photos)
 
 
@@ -105,7 +92,7 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(cm_exception.detail, messages.PHOTO_NOT_FOUND)
 
     async def test_delete_photo_noadmin(self):
-        user = User(id=2, username="username", email="test@mail.com", roles=Role.user)
+        user = User(id=2, username="username", email="test@mail.com", roles=UserRole.user)
         with self.assertRaises(HTTPException) as cm:
             await PhotosRepository().delete_photo(photo_id=1, current_user=user, session=self.session)
         cm_exception = cm.exception
@@ -176,7 +163,7 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_photo_description_noadmin(self):
         description = self.photo.description
-        user = User(id=2, username="username", email="test@mail.com", roles=Role.user)
+        user = User(id=2, username="username", email="test@mail.com", roles=UserRole.user)
         with self.assertRaises(HTTPException) as cm:
             await PhotosRepository().update_photo_description(photo_id=1, description=description, current_user=user, session=self.session)
         cm_exception = cm.exception
@@ -209,9 +196,6 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
 
 
     # add_tags_to_photo
-    # @patch("src.repository.tags.TagRepository.check_tag_exist_or_create")
-    # async def test_add_tags_to_photo(self, mock_tag):
-        # mock_tag.return_value = self.tag
     async def test_add_tags_to_photo(self):
         self.session.execute().return_value = None
         self.session.execute().scalar_one.return_value = self.tag

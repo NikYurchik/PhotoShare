@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from fastapi.testclient import TestClient
 
 from src.database.models import User, Photo, Comment
-from src.services.roles import Role
+from src.services.roles import UserRole
 from src.schemas import CommentModel
 from src.conf import messages
 from src import schemas
@@ -18,7 +18,7 @@ def token(client, user, session, monkeypatch):
     client.post("/api/auth/signup", json=user)
     current_user: User = session.query(User).filter(User.email == user.get('email')).first()
     current_user.confirmed = True
-    current_user.roles = Role.admin
+    current_user.roles = UserRole.admin
     session.commit()
 
     response = client.post(
@@ -49,7 +49,7 @@ def cphoto(client, user, session, monkeypatch):
 def test_create_comment(client, token, cphoto, monkeypatch):
     body = {"text": "Comment"}    
     response = client.post(
-        f"/api/comments/{cphoto.id}",
+        f"/api/photos/{cphoto.id}/comments/",
         json=body,
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -61,7 +61,7 @@ def test_create_comment(client, token, cphoto, monkeypatch):
 
 def test_get_comments(client, token, cphoto, session, monkeypatch):
     response = client.get(
-        f"/api/comments/{cphoto.id}",
+        f"/api/photos/{cphoto.id}/comments/",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200, response.text
@@ -71,9 +71,9 @@ def test_get_comments(client, token, cphoto, session, monkeypatch):
 
 def test_update_comment(client, token, cphoto, session, monkeypatch):
     comment: Comment = session.query(Comment).filter(Comment.photo_id == cphoto.id).first()
-    body = {"id": comment.id, "text": comment.text+"333"}    
+    body = {"text": comment.text+"333"}    
     response = client.put(
-        "/api/comments",
+        f"/api/photos/{cphoto.id}/comments/{comment.id}",
         json=body,
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -86,19 +86,19 @@ def test_update_comment_notfound(client, token, cphoto, session, monkeypatch):
     comment: Comment = session.query(Comment).filter(Comment.photo_id == cphoto.id).first()
     body = {"id": comment.id+99, "text": comment.text+"333"}    
     response = client.put(
-        "/api/comments",
+        f"/api/photos/{cphoto.id}/comments/{comment.id+99}",
         json=body,
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 404, response.text
     data = response.json()
-    assert data["detail"] == messages.NOT_FOUND
+    assert data["detail"] == messages.COMMENT_NOT_FOUND
 
 
 def test_delete_comment(client, token, cphoto, session, monkeypatch):
     comment: Comment = session.query(Comment).filter(Comment.photo_id == cphoto.id).first()
     response = client.delete(
-        f"/api/comments/{comment.id}",
+        f"/api/photos/{cphoto.id}/comments/{comment.id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 204, response.text

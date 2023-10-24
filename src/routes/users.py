@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.database.models import User, Role
+from src.database.models import User, UserRole
 from src.repository import users as repository_users
 from src.services.auth import auth_service
 from src.schemas import UserDbAdmin
@@ -14,11 +14,11 @@ from src.conf import messages
 from src.services.custom_limiter import RateLimiter
 
 
-allowed_operation_all = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_notuser = RoleAccess([Role.admin, Role.moderator])
-allowed_operation_admin = RoleAccess([Role.admin])
+allowed_operation_all = RoleAccess([UserRole.admin, UserRole.moderator, UserRole.user])
+allowed_operation_notuser = RoleAccess([UserRole.admin, UserRole.moderator])
+allowed_operation_admin = RoleAccess([UserRole.admin])
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="", tags=["users"])
 
 
 @router.get("/",
@@ -48,7 +48,7 @@ async def get_user(user_id: int = Path(ge=1), db: Session = Depends(get_db),
     return user
 
 
-@router.patch('/toggle_ban/{user_id}',
+@router.patch('/{user_id}/toggle_ban',
               response_model=UserDbAdmin,
               description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
               dependencies=[Depends(allowed_operation_notuser), Depends(RateLimiter(times=10, seconds=60))])
@@ -64,7 +64,7 @@ async def toogle_banned_user(user_id: int = Path(ge=1),
     return user
 
 
-@router.patch('/set_roles/{user_id}',
+@router.patch('/{user_id}/set_roles',
               response_model=UserDbAdmin,
               description=messages.NO_MORE_THAN_10_REQUESTS_PER_MINUTE,
               dependencies=[Depends(allowed_operation_admin), Depends(RateLimiter(times=10, seconds=60))])

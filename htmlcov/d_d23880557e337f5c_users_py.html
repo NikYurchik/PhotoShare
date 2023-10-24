@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="d_91a712da898ee42e_auth_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.1">coverage.py v7.3.1</a>,
-            created at 2023-10-15 00:51 -0700
+            created at 2023-10-23 20:18 -0700
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -88,7 +88,7 @@
     <p class="run"><span class="n"><a id="t6" href="#t6">6</a></span><span class="t"><span class="key">from</span> <span class="nam">sqlalchemy</span><span class="op">.</span><span class="nam">exc</span> <span class="key">import</span> <span class="nam">SQLAlchemyError</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t7" href="#t7">7</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t8" href="#t8">8</a></span><span class="t"><span class="key">from</span> <span class="nam">src</span><span class="op">.</span><span class="nam">database</span><span class="op">.</span><span class="nam">db</span> <span class="key">import</span> <span class="nam">DBSession</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t9" href="#t9">9</a></span><span class="t"><span class="key">from</span> <span class="nam">src</span><span class="op">.</span><span class="nam">database</span><span class="op">.</span><span class="nam">models</span> <span class="key">import</span> <span class="nam">User</span><span class="op">,</span> <span class="nam">Role</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t9" href="#t9">9</a></span><span class="t"><span class="key">from</span> <span class="nam">src</span><span class="op">.</span><span class="nam">database</span><span class="op">.</span><span class="nam">models</span> <span class="key">import</span> <span class="nam">User</span><span class="op">,</span> <span class="nam">UserRole</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t10" href="#t10">10</a></span><span class="t"><span class="key">from</span> <span class="nam">src</span><span class="op">.</span><span class="nam">schemas</span> <span class="key">import</span> <span class="nam">UserModel</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t12" href="#t12">12</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -118,7 +118,7 @@
     <p class="run"><span class="n"><a id="t36" href="#t36">36</a></span><span class="t">    <span class="key">return</span> <span class="nam">user</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t38" href="#t38">38</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t39" href="#t39">39</a></span><span class="t"><span class="key">async</span> <span class="key">def</span> <span class="nam">set_roles_user</span><span class="op">(</span><span class="nam">user_id</span><span class="op">:</span> <span class="nam">int</span><span class="op">,</span> <span class="nam">role</span><span class="op">:</span> <span class="nam">Role</span><span class="op">,</span> <span class="nam">db</span><span class="op">:</span> <span class="nam">Session</span><span class="op">)</span> <span class="op">-></span> <span class="nam">User</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t39" href="#t39">39</a></span><span class="t"><span class="key">async</span> <span class="key">def</span> <span class="nam">set_roles_user</span><span class="op">(</span><span class="nam">user_id</span><span class="op">:</span> <span class="nam">int</span><span class="op">,</span> <span class="nam">role</span><span class="op">:</span> <span class="nam">UserRole</span><span class="op">,</span> <span class="nam">db</span><span class="op">:</span> <span class="nam">Session</span><span class="op">)</span> <span class="op">-></span> <span class="nam">User</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t40" href="#t40">40</a></span><span class="t">    <span class="com"># print(f"toogle_ban user_id: {user_id}")</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t41" href="#t41">41</a></span><span class="t">    <span class="nam">user</span> <span class="op">=</span> <span class="key">await</span> <span class="nam">get_user_by_id</span><span class="op">(</span><span class="nam">user_id</span><span class="op">,</span> <span class="nam">db</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t42" href="#t42">42</a></span><span class="t">    <span class="key">if</span> <span class="nam">user</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -251,7 +251,7 @@
             <a id="nextFileLink" class="nav" href="d_91a712da898ee42e_auth_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.3.1">coverage.py v7.3.1</a>,
-            created at 2023-10-15 00:51 -0700
+            created at 2023-10-23 20:18 -0700
         </p>
     </div>
 </footer>
