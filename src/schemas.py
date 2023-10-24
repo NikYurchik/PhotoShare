@@ -5,7 +5,7 @@ import json
 
 from pydantic import BaseModel, Field, EmailStr, model_validator, constr
 
-from src.database.models import Role
+from src.database.models import UserRole
 
 
 class UserModel(BaseModel):
@@ -20,7 +20,7 @@ class UserDb(BaseModel):
     email: EmailStr
     created_at: Optional[datetime] = datetime.now()
     avatar: Optional[str] = None
-    roles: Role
+    roles: UserRole
 
     class Config:
         from_attributes = True

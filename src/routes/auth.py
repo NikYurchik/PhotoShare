@@ -9,7 +9,7 @@ from src.services.auth import auth_service
 from src.services.email import send_email
 from src.conf import messages
 
-router = APIRouter(prefix='/auth', tags=["auth"])
+router = APIRouter(prefix='', tags=["auth"])
 security = HTTPBearer()
 
 

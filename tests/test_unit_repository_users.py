@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.database.models import User
 from src.schemas import UserModel
-from src.services.roles import Role
+from src.services.roles import UserRole
 from src.repository.users import (
     get_users,
     get_users_by_mask,
@@ -91,10 +91,10 @@ class TestUsers(unittest.IsolatedAsyncioTestCase):
 
     # set_roles_user
     async def test_set_roles_user(self):
-        user0 = User(username=self.username, email=self.email, password=self.password, roles=Role.admin)
-        user = User(username=self.username, email=self.email, password=self.password, roles=Role.admin)
+        user0 = User(username=self.username, email=self.email, password=self.password, roles=UserRole.admin)
+        user = User(username=self.username, email=self.email, password=self.password, roles=UserRole.admin)
         self.session.query().filter().first.return_value = user
-        result = await set_roles_user(user_id=1, role=Role.moderator, db=self.session)
+        result = await set_roles_user(user_id=1, role=UserRole.moderator, db=self.session)
         self.assertEqual(result.id, user.id)
         self.assertEqual(result.email, user.email)
         self.assertNotEqual(result.roles, user0.roles)

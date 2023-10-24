@@ -1,8 +1,7 @@
 from unittest.mock import MagicMock
 import pytest
 
-from src.database.models import User
-from src.services.roles import Role
+from src.database.models import User, UserRole
 from src.conf import messages
 from src import schemas
 
@@ -15,7 +14,7 @@ def token(client, user, session, monkeypatch):
     client.post("/api/auth/signup", json=user)
     current_user: User = session.query(User).filter(User.email == user.get('email')).first()
     current_user.confirmed = True
-    current_user.roles = Role.admin
+    current_user.roles = UserRole.admin
     session.commit()
 
     response = client.post(
@@ -44,7 +43,7 @@ def token2(client, user2, session, monkeypatch):
     client.post("/api/auth/signup", json=user2)
     current_user: User = session.query(User).filter(User.email == user2.get('email')).first()
     current_user.confirmed = True
-    current_user.roles = Role.user
+    current_user.roles = UserRole.user
     session.commit()
 
     response = client.post(
@@ -65,7 +64,7 @@ def test_upload_photo(client, token, photo_request, photo, monkeypatch):
         tmp.write(b'upload this')
     with open(f, 'rb') as tmp:
         response = client.post(
-            "/api/photos/new",
+            "/api/photos",
             files={"photo_file": ("filename", tmp, "image/jpeg")},
             data={"body": body},
             headers={"Authorization": f"Bearer {token}"}
@@ -84,7 +83,7 @@ def test_get_all_photos(client, token, user, photo_request, photos, monkeypatch)
     photo_request["description"] = photos[1]["photo"]["description"]
     test_upload_photo(client, token, photo_request, photos[1], monkeypatch)
 
-    response = client.get("/api/photos/all",
+    response = client.get("/api/photos",
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200, response.text
@@ -96,7 +95,7 @@ def test_get_all_photos(client, token, user, photo_request, photos, monkeypatch)
 
 
 def test_get_photo_by_user(client, token, user, photos, monkeypatch):
-    response = client.get("/api/photos/user/1",
+    response = client.get("/api/photos/?user_id=1",
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200, response.text
@@ -108,7 +107,7 @@ def test_get_photo_by_user(client, token, user, photos, monkeypatch):
 
 
 def test_get_photo_by_user_notfound(client, token, user, photos, monkeypatch):
-    response = client.get("/api/photos/user/99",
+    response = client.get("/api/photos/?user_id=999",
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200, response.text
@@ -124,7 +123,7 @@ def test_search_photos(client, token, user, photos, monkeypatch):
             "order_by": ""
             }
     
-    response = client.get("/api/photos/search",
+    response = client.get("/api/photos/?keyword=es&tag=tags1",
                             params=body,
                             headers={"Authorization": f"Bearer {token}"})
 
@@ -137,7 +136,7 @@ def test_search_photos(client, token, user, photos, monkeypatch):
 
 
 def test_get_photo_by_id(client, token, user, photos, monkeypatch):
-    response = client.get("/api/photos/single/1",
+    response = client.get("/api/photos/1",
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200, response.text
@@ -149,7 +148,7 @@ def test_get_photo_by_id(client, token, user, photos, monkeypatch):
 
 
 def test_get_photo_by_id_notfound(client, token, user, photos, monkeypatch):
-    response = client.get("/api/photos/single/999",
+    response = client.get("/api/photos/999",
                             headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 404, response.text
@@ -209,7 +208,7 @@ def test_photo_transform(client, token, user, photo, monkeypatch):
     trans_url = "https://res.cloudinary.com/dqglsxwms/image/upload/c_fill,g_center,h_800,w_800/r_0/q_auto/f_jpg/v1/upload/d7pxlzuvmhossf46zxug"
     monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_transform_image', MagicMock(return_value=trans_url))
 
-    response = client.post(f"/api/photos/transform/{photo['photo']['id']}",
+    response = client.post(f"/api/photos/{photo['photo']['id']}/transform",
                             json=body,
                             headers={"Authorization": f"Bearer {token}"})
 
@@ -236,7 +235,7 @@ def test_photo_transform_notfound(client, token, user, photo, monkeypatch):
     trans_url = "https://res.cloudinary.com/dqglsxwms/image/upload/c_fill,g_center,h_800,w_800/r_0/q_auto/f_jpg/v1/upload/d7pxlzuvmhossf46zxug"
     monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_transform_image', MagicMock(return_value=trans_url))
 
-    response = client.post("/api/photos/transform/999",
+    response = client.post("/api/photos/999/transform",
                             json=body,
                             headers={"Authorization": f"Bearer {token}"})
 
@@ -259,7 +258,7 @@ def test_photo_transform_notoperation(client, token2, user2, photo, monkeypatch)
     trans_url = "https://res.cloudinary.com/dqglsxwms/image/upload/c_fill,g_center,h_800,w_800/r_0/q_auto/f_jpg/v1/upload/d7pxlzuvmhossf46zxug"
     monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_transform_image', MagicMock(return_value=trans_url))
 
-    response = client.post("/api/photos/transform/1",
+    response = client.post("/api/photos/1/transform",
                             json=body,
                             headers={"Authorization": f"Bearer {token2}"})
 
@@ -275,7 +274,7 @@ def test_create_qrcode(client, token, user, photo, monkeypatch):
     }
     monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_qrcode', MagicMock(return_value=photo["photo"]["qr_url"]))
 
-    response = client.post("/api/photos/qrcode/1",
+    response = client.post("/api/photos/1/qrcode",
                             json=body,
                             headers={"Authorization": f"Bearer {token}"})
 
@@ -288,14 +287,13 @@ def test_create_qrcode(client, token, user, photo, monkeypatch):
 
 def test_create_trans_qrcode(client, token, user, photo, monkeypatch):
     body = {
-        "transform_photo_id": "1",
         "fill_color": "black",
         "back_color": "white"
     }
     qr_url = "http://res.cloudinary.com/dqglsxwms/image/upload/v1697928381/upload/qr/c8.png"
     monkeypatch.setattr('src.services.cloud_image.CloudImage.upload_qrcode', MagicMock(return_value=qr_url))
 
-    response = client.post(f"/api/photos/trans_qrcode/{photo['photo']['id']}",
+    response = client.post(f"/api/photos/{photo['photo']['id']}/qrcode/1",
                             json=body,
                             headers={"Authorization": f"Bearer {token}"})
 
@@ -307,7 +305,7 @@ def test_create_trans_qrcode(client, token, user, photo, monkeypatch):
 def test_delete_transform_photo(client, token, user, photo, monkeypatch):
     monkeypatch.setattr('src.services.cloud_image.CloudImage.delete_image', MagicMock(return_value=None))
     
-    response = client.delete("/api/photos/del_tr_photo/1",
+    response = client.delete(f"/api/photos/{photo['photo']['id']}/1",
                                 headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 204, response.text

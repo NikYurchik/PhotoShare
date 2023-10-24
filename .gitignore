@@ -9,4 +9,4 @@ docs
 postgres-data
 .idea
 test.db
-fileupload.tst
+*.tst

@@ -8,7 +8,7 @@ from sqlalchemy import insert, select, update, delete, desc, asc
 from sqlalchemy.orm import Session
 from cloudinary import uploader
 
-from src.database.models import Role, Photo, User, PhotoURL, Tag, tag_photo_association as t2p
+from src.database.models import UserRole, Photo, User, PhotoURL, Tag, tag_photo_association as t2p
 from src.repository.tags import TagRepository
 from src.schemas import PhotoTransformModel, PhotoQRCodeModel, PhotoResponse
 from src.conf import messages
@@ -127,7 +127,7 @@ class PhotosRepository:
         photo = session.execute(query).scalar_one_or_none()
         if not photo:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND)
-        elif photo.user_id != current_user.id and current_user.roles != Role.admin:
+        elif photo.user_id != current_user.id and current_user.roles != UserRole.admin:
             session.rollback()
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
@@ -193,7 +193,7 @@ class PhotosRepository:
 
         if not photo:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Photo not found")
-        elif photo.user_id != current_user.id and current_user.roles != Role.admin:
+        elif photo.user_id != current_user.id and current_user.roles != UserRole.admin:
             session.rollback()
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail=messages.OPERATION_NOT_AVAILABLE)
 
@@ -247,7 +247,7 @@ class PhotosRepository:
         return result
 
 
-    async def search_photos(self, keyword: str, tag: str, order_by: str, session: Session):
+    async def search_photos(self, session: Session, user_id: int=None, keyword: str=None, tag: str=None, order_by: str=None):
         """
         Search for photos by keyword or tag and filter the results by rating or date.
 
@@ -265,6 +265,9 @@ class PhotosRepository:
         # print(f"order_by: {order_by}")
         photos_query = select(Photo)
 
+        if user_id:
+            photos_query = photos_query.where(Photo.user_id == user_id)
+            
         if keyword:
             keyword_filter = Photo.description.ilike(f"%{keyword}%")
             photos_query = photos_query.where(keyword_filter)

@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from src.database.models import User, Comment, Photo
 from src.schemas import UserModel, CommentModel, CommentUpdate, CommentDelete
-from src.services.roles import Role
+from src.services.roles import UserRole
 from src.conf import messages
 from src.repository.comments import (
     get_comments,
@@ -60,19 +60,19 @@ class TestUsers(unittest.IsolatedAsyncioTestCase):
 
     # update_comment,
     async def test_update_comment(self):
-        body_ = CommentUpdate(id=self.comment.id, text=self.comment.text)
+        body_ = CommentModel(text=self.comment.text)
         self.session.query().filter().first.return_value = self.comment
         self.session.commit.return_value = None
-        result = await update_comment(body=body_, user=self.user, db=self.session)
+        result = await update_comment(photo_id=self.photo.id, comment_id=self.comment.id, body=body_, user=self.user, db=self.session)
         self.assertEqual(result.id, self.comment.id)
         self.assertEqual(result.text, self.comment.text)
 
     async def test_update_comment_notoperation(self):
-        body_ = CommentUpdate(id=self.comment.id, text=self.comment.text)
+        body_ = CommentModel(text=self.comment.text)
         self.session.query().filter().first.return_value = self.comment
         user_ = User(id=2)
         with self.assertRaises(HTTPException) as cm:
-            result = await update_comment(body=body_, user=user_, db=self.session)
+            result = await update_comment(photo_id=self.photo.id, comment_id=self.comment.id, body=body_, user=user_, db=self.session)
         cm_exception = cm.exception
         self.assertEqual(cm_exception.status_code, 403)
         self.assertEqual(cm_exception.detail, messages.OPERATION_NOT_AVAILABLE)
@@ -80,18 +80,18 @@ class TestUsers(unittest.IsolatedAsyncioTestCase):
 
     # delete_comment
     async def test_delete_comment(self):
-        body_ = CommentDelete(id=self.comment.id)
+        # body_ = CommentDelete(id=self.comment.id)
         self.session.query().filter().first.return_value = self.comment
         self.session.commit.return_value = None
-        result = await delete_comment(comment_id=self.comment.id, user=self.user, db=self.session)
+        result = await delete_comment(photo_id=self.photo.id, comment_id=self.comment.id, user=self.user, db=self.session)
         self.assertIsNone(result)
 
     async def test_delete_comment_notoperation(self):
-        body_ = CommentDelete(id=self.comment.id)
+        # body_ = CommentDelete(id=self.comment.id)
         self.session.query().filter().first.return_value = self.comment
         user_ = User(id=2)
         with self.assertRaises(HTTPException) as cm:
-            result = await delete_comment(comment_id=self.comment.id, user=user_, db=self.session)
+            result = await delete_comment(photo_id=self.photo.id, comment_id=self.comment.id, user=user_, db=self.session)
         cm_exception = cm.exception
         self.assertEqual(cm_exception.status_code, 403)
         self.assertEqual(cm_exception.detail, messages.OPERATION_NOT_AVAILABLE)

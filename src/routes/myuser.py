@@ -9,10 +9,10 @@ from src.schemas import UserDb
 from src.services.cloud_image import CloudImage
 
 
-router = APIRouter(prefix="/myuser", tags=["myuser"])
+router = APIRouter(prefix="", tags=["myuser"])
 
 
-@router.get("/me/", response_model=UserDb)
+@router.get("/", response_model=UserDb)
 async def read_users_me(current_user: User = Depends(auth_service.get_current_user)):
     """
     The read_users_me function returns the current user's information.
@@ -27,11 +27,11 @@ async def read_users_me(current_user: User = Depends(auth_service.get_current_us
     :return: The current user object, which is passed as a parameter to the function
     :doc-author: Python-WEB13-project-team-2
     """
-    print(f"read_users_me: ")
+    # print(f"read_users_me: ")
     return current_user
 
 
-@router.patch('/avatar', response_model=UserDb)
+@router.patch('/', response_model=UserDb)
 async def update_avatar_user(file: UploadFile = File(),
                              current_user: User = Depends(auth_service.get_current_user),
                              db: Session = Depends(get_db)):

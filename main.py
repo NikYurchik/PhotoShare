@@ -53,11 +53,11 @@ app.add_middleware(
 )
 
 
-app.include_router(auth.router, prefix='/api')
-app.include_router(users.router, prefix='/api')
-app.include_router(photos.router, prefix='/api')
-app.include_router(myuser.router, prefix='/api')
-app.include_router(comments.router, prefix='/api')
+app.include_router(auth.router, prefix='/api/auth')
+app.include_router(users.router, prefix='/api/users')
+app.include_router(photos.router, prefix='/api/photos')
+app.include_router(myuser.router, prefix='/api/myuser')
+# app.include_router(comments.router, prefix='/api/comments')
 
 templates = Jinja2Templates(directory='templates')
 BASE_DIR = pathlib.Path(__file__).parent

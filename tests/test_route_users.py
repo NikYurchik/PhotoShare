@@ -3,7 +3,7 @@ import pytest
 
 from src.database.models import User
 from src.services.auth import auth_service
-from src.services.roles import Role
+from src.services.roles import UserRole
 from src.conf import messages
 
 
@@ -37,7 +37,7 @@ def test_get_users_forbidden(client, token, user, monkeypatch):
 
 def test_get_users(client, token, user, session, monkeypatch):
     current_user: User = session.query(User).filter(User.email == user.get('email')).first()
-    current_user.roles = Role.admin
+    current_user.roles = UserRole.admin
     session.commit()
     
     response = client.get("/api/users",
