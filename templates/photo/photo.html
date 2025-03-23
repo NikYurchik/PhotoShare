@@ -1,0 +1,688 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% set ns = namespace(found=false) %}
+{% set ns.irole = 0 %}
+{% for role in roles %}
+    {%- if user.roles == role %}{% set ns.irole = loop.index0 %}{% endif %}
+{%- endfor %}
+
+<script>
+    async function loadImage() {
+        const img = document.getElementById("photo-url");
+        if (img.naturalWidth < img.parentNode.clientWidth) {
+            img.width = img.naturalWidth;
+        } else {
+            img.width = img.parentNode.clientWidth;
+        }
+        const osize = document.getElementById("photo-size");
+        osize.textContent = "Original sizes:" + img.naturalWidth + " x " + img.naturalHeight;
+    }
+
+    async function viewImage(id, img_url, trans_id, trans_params) {
+        const qr_img = document.getElementById("qr-url");
+        const elem = document.getElementById(id);
+        let qr_url = elem.getAttribute('title');
+        if (Boolean(qr_url)) {
+            qr_img.src = qr_url;
+            qr_img.style.display = "block";
+        } else {
+            qr_img.src = '';
+            qr_img.style.display = "none";
+        }
+        const img = document.getElementById("photo-url");
+        img.src = img_url;
+        img.alt = trans_id;
+        // console.log(`trans_id: ${trans_id}`)
+        const menu_remove = document.getElementById("remove-photo");
+        const menu_etrans = document.getElementById("edit-trans");
+        const trans_par = document.getElementById("trans-params");
+        const orig = document.getElementById("orig-img");
+        if (Boolean(orig)) {
+            if (img.src == orig.src) {
+                if (Boolean(menu_remove)) {
+                    menu_remove.textContent = "Remove Photo";
+                    menu_etrans.style.display = "none";
+                }
+                trans_par.textContent = "";
+            } else {
+                if (Boolean(menu_remove)) {
+                    menu_remove.textContent = "Remove Transformation";
+                    menu_etrans.style.display = "block";
+                }
+
+                if (Boolean(trans_params)) {
+                    let trans_data = trans_params.replaceAll('&#34;', '"').replaceAll('&#39;', '"');
+                    trans_data = (Boolean(trans_data)) ? JSON.parse(trans_data) : {};
+                    console.log(trans_data);
+
+                    let trans_str = [];
+                    for (const key of Object.keys(trans_data)) {
+                        if (Boolean(trans_data[key])) {
+                            let value = trans_data[key];
+                            if (value.indexOf('||') >= 0) {
+                                value = value.slice(value.indexOf('||')+2);
+                            }
+                            trans_str.push(`${key}: ${value}`);
+                        }
+                    }
+                    if (Boolean(trans_str)) {
+                        trans_str = '{ ' + trans_str.join(', ') + ' }';
+                        trans_par.textContent = trans_str;
+                    }
+                }
+            }
+        }
+    }
+
+    async function fnNewTransform() {
+        let url = document.URL + "/transform"
+        window.location.href = url;
+    }
+
+    async function fnEditTransform() {
+        const img = document.getElementById("photo-url");
+        let url = document.URL + "/transform/?transform_id=" + img.alt;
+        window.location.href = url;
+    }
+</script>
+
+<div class="author-details">
+    <div class="photo-title">
+        <div style="display: flex;">
+            {% if photo.photo.qr_url %}
+            <img src="{{photo.photo.qr_url}}" alt="QR code" height="80" style="display: block;" id="qr-url">
+            {% else %}
+            <img src="" alt="QR code" height="80" style="display: none;" id="qr-url">
+            {% endif %}
+
+            <h3 class="author-title" id="photo-desc">{{photo.photo.description}}</h3>
+        </div>
+
+        {% if user.is_authenticated %}
+        {% if user.id == photo.photo.user_id  or ns.irole == 0 %}
+        <div class="btn btn-primary menu-item">
+            <p class="menu-link">Operation</p>
+            <ul class="submenu" id="photo-submenu">
+                <li>
+                    <p id="gen-qr" onclick="fnGenQRPhoto('{{photo.photo.id}}')">Generate QR code</p>
+                </li>
+                <li>
+                    <p onclick="fnEditDescPhoto('{{photo.photo.id}}')">Edit Description</p>
+                </li>
+                <li>
+                    <p id="remove-photo" onclick="fnRemovePhoto('{{photo.photo.id}}')">Remove Photo</p>
+                </li>
+                <li>
+                    <p onclick="fnNewTransform('{{photo.photo.id}}')">New Transformation</p>
+                </li>
+                <li>
+                    <p id="edit-trans" style="display: none;" onclick="fnEditTransform('{{photo.photo.id}}')">Edit Transformation</p>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="photo-title">
+        <p id="photo-size"></p>
+        <p id="trans-params"></p>
+        <p>Owner: {{photo.photo.username}}</p>
+    </div>
+
+    <div class="img-box" id="img-box">
+        <div class="img-div" {% if transforms %} style="width: 85%;" {% else %} style="width: 100%;" {% endif %}>
+            <img src="{{photo.photo.file_url}}" alt="!{{photo.photo.description}}" id="photo-url" onload="loadImage()">
+        </div>
+
+        {% if transforms %}
+        <div class="transfom-photo" style="width: 15%;" id="transfom-photo">
+            <p>Original</p>
+            <img src="{{photo.photo.file_url}}" alt="{{photo.photo.description}}" width="100%" id="orig-img"
+                 title="{% if photo.photo.qr_url %}{{photo.photo.qr_url}}{% endif %}"
+                                                onclick="viewImage('orig-img',
+                                                                   '{{photo.photo.file_url}}',
+                                                                   '!{{photo.photo.description}}')">
+            <p>Trasformations</p>
+            {% for trans in transforms %}
+            <div class="trans-photo">
+                <img src="{{trans.file_url}}" alt="({{photo.photo.id}},{{transforms.id}})" width="100%" id="trans-{{trans.id}}"
+                     title="{% if trans.qr_url %}{{trans.qr_url}}{% endif %}"
+                                                onclick="viewImage('trans-{{trans.id}}',
+                                                                   '{{trans.file_url}}',
+                                                                   '{{trans.id}}',
+                                                                   '{{trans.params}}')">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="tags2">
+        <div class="tags">
+            Tags:
+            {% for tag in photo.tags %}
+            <!-- Если залогинился и владелец или админ, то кнопку с функцией удаления тэга, иначе <p> -->
+            {% if user.is_authenticated and (user.id == photo.photo.user_id  or ns.irole == 0) %}
+            <div class="dropdown">
+                <button type="button" class="tag" name="{{tag.name}}" onclick="fnRemoveTag('{{tag.name}}')">{{tag.name}}</button>
+                <div class="dropdown-content">
+                    <p>Remove Tag</p>
+                </div>
+            </div>
+            {% else %}
+            <p class="tag">{{tag.name}}</a>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <!-- Если залогинился и владелец, то кнопку с функцией добавления тэга -->
+        {% if user.is_authenticated %}
+        {% if user.id == photo.photo.user_id  or ns.irole == 0 %}
+        <button type="button" class="tag" name="add-tags" onclick="fnAddTags()">Add Tags</button>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    {% if user.is_authenticated %}
+    {% if user.id == photo.photo.user_id  or ns.irole == 0 %}
+    <form class="border-form" method="patch" id="addtags-subscription" enctype="application/json" name="addtags-form" style="display: none;">
+        <div class="table-tag">
+            <div class="">
+                <div class="form-group">
+                    <label style="width: 100%;"> Enter Tags:
+                        <input type="text" name="tag_str" id="id_tag_str" style="width: inherit;">
+                    </label>
+                </div>
+            </div>
+        
+            <div class="">
+                <div class="form-group">
+                    <label style="width: 100%;"> and/or select Tags:
+                        <select name="tags" multiple="multiple" style="width: inherit;">
+                            {% if tags %}
+                            <option value="">-- empty --</option>
+                            {% endif %}
+                            {% for tag in tags %}
+                            <option value="{{tag.name}}">{{tag.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+            </div>
+        
+            <div class="">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="button" class="btn btn-primary secondary" onclick="fnCancelAddTags()">Cancel</button>
+            </div>
+        </div>
+        <p id="error-msg" style="color: red; margin: 0;" class="inp-error"> </p>
+    </form>
+    {% endif %}
+    {% endif %}
+
+    <div class="comments">
+        <div class="com-head">
+
+            {% if user.is_authenticated %}
+            <form class="subscribe" method="post" id="comment-subscription" enctype="application/json" name="comment-form">
+                <div>Commets: </div>
+                <input type="text" name="text" id="subscribe" placeholder="Enter comment">
+                <div class="com-btn">
+                    <button type="submit" class="tag">Add comment</button>
+                </div>
+            </form>
+
+            {% else %}
+            {% if photo.comments %}
+            <div>Commets:</div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {% for comm in photo.comments %}
+        <p class="comment"><span>{{comm.username}}:</span> {{comm.text}}</a>
+        {% if user.is_authenticated %}
+        {% if user.id == comm.user_id  or ns.irole == 0 %}
+        <button type="button" class="tag" name="{{comm.id}}" onclick="fnRemoveComment('{{comm.id}}')">Remove</button>
+        {% endif %}
+        {% endif %}
+
+    {% endfor %}
+    </div>
+</div>
+
+<!-- <script src="/js/sendback.js"></script> -->
+<script>
+    // const sendBackEnd = new SendBackEnd();
+
+    // async function fnSuccesQRPhoto(key, value) {
+    //     if (key == "qr_url") {
+    //         let orig = document.getElementById("orig-img");
+    //         const qr_src = document.getElementById("qr-url");
+    //         qr_src.src = suc.value;
+    //         qr_src.style.display = "block";
+    //         if (Boolean(orig)) {
+    //             orig.setAttribute('title', value);
+    //         }
+    //     }
+
+    // }
+
+    async function fnGenQRPhoto(photo_id) {
+        const img = document.getElementById("photo-url");
+        let orig = document.getElementById("orig-img");
+        let url = document.URL + "/qrcode";
+        let is_trans = false;
+        if (Boolean(orig) && img.src !== orig.src) {
+            url = `${url}/${img.alt}`;
+            orig = document.getElementById(`trans-${img.alt}`);
+            is_trans = true;
+        }
+        const body = {"fill_color": "black", "back_color": "white"}
+        const bodyJsonString = JSON.stringify(body);
+
+        let responseData = undefined;
+        let isRedirect = false;
+        let urlRedirect = "";
+        let isReload = false;
+
+        const qr_src = document.getElementById("qr-url");
+
+        // sendBackEnd.fnFetch(sendBackEnd, url, fetchOptions, errorsHandling)
+
+        try {
+            const fetchOptions = {
+                method: "POST",
+                headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: bodyJsonString,
+            };
+            responseData = await fetch(url, fetchOptions);
+            if (!responseData.ok) {
+                const errorMessage = await response.text();
+                throw new Error(errorMessage);
+            }
+
+            if (responseData.redirected) {
+                isRedirect = true;
+                urlRedirect = await check_redirect(responseData.url);
+            }
+            else {
+                const responseJson = await responseData.json();
+                const succs = responseJson.detail.success;
+                const errs = responseJson.detail.errors;
+
+                if (Boolean(errs)) {
+                    await errorsHandling(errs);
+                }
+                else if (Boolean(succs)) {
+                    for (const suc of succs) {
+                        if (suc.key == "redirect") {
+                            isRedirect = true;
+                            urlRedirect = suc.value;
+                        } 
+                        else if (suc.key == "message") {
+                            alert(`Message: ${suc.value}`);
+                        }
+                        else if (suc.key == "reload") {
+                            isReload = true;
+                        }
+                        else if (suc.key == "qr_url") {
+                            qr_src.src = suc.value;
+                            qr_src.style.display = "block";
+                            if (Boolean(orig)) {
+                                orig.setAttribute('title', suc.value);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error: ${error}`);
+            alert(`Error: ${error}`);
+            isRedirect = false;
+            isReload = true;
+        }
+
+        if (isRedirect) {
+            if (!Boolean(urlRedirect)) {
+                alert("Redirect.value is not URL");
+                urlRedirect = '/';
+            }
+            window.location.href = `${urlRedirect}`;
+        }
+        else if (isReload) {
+            window.location.reload();
+        }
+    }
+
+    async function fnEditDescPhoto(photo_id) {
+        const elem = document.getElementById("photo-desc");
+        let desc = prompt("Please enter new description", elem.textContent);
+        if (Boolean(desc)) {
+            let body = {"description": desc};
+            const bodyJsonString = JSON.stringify(body);
+            let responseData = undefined;
+            let isRedirect = false;
+            let urlRedirect = "";
+            let isReload = false;
+            const url = document.URL;
+
+            try {
+                const fetchOptions = {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: bodyJsonString,
+                };
+                responseData = await fetch(url, fetchOptions);
+
+                if (!responseData.ok) {
+                    const errorMessage = await responseData.text();
+                    alert(errorMessage);
+                }
+                else {
+                    if (responseData.redirected) {
+                        isRedirect = true;
+                        urlRedirect = await check_redirect(responseData.url);
+                    }
+                    else {
+                        const responseJson = await responseData.json();
+                        const succs = responseJson.detail.success;
+                        const errs = responseJson.detail.errors;
+
+                        if (Boolean(errs)) {
+                            await errorsHandling(errs);
+                        }
+                        else if (Boolean(succs)) {
+                            elem.textContent = desc;
+                            for (const suc of succs) {
+                                if (suc.key == "redirect") {
+                                    isRedirect = true;
+                                    urlRedirect = suc.value;
+                                } 
+                                else if (suc.key == "message") {
+                                    alert(suc.value);
+                                }
+                                else if (suc.key == "reload") {
+                                    isReload = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error: ${error}`);
+                alert(`Error: ${error}`);
+                isRedirect = false;
+                isReload = true;
+            }
+
+            if (isRedirect) {
+                if (!Boolean(urlRedirect)) {
+                    alert("Redirect.value is not URL");
+                    urlRedirect = "/";
+                }
+                window.location.href = `${urlRedirect}`;
+            }
+            else if (isReload) {
+                window.location.reload();
+            }
+        }
+    }
+
+async function fnRemoveTag(tag_name) {
+    const url = document.URL + "/remove-tag/?tag=" + tag_name
+    const fetchOptions = {
+        method: "PATCH",
+    };
+    const response = await fetch(url, fetchOptions);
+    if (!response.ok) {
+        const errorMessage = await response.text();
+        alert(errorMessage);
+    }
+    else {
+        window.location.reload();
+    }
+}
+</script>
+
+<script>
+async function fnAddTags() {
+    const form = document.getElementById("addtags-subscription");
+    form.style.display = "block";
+}
+
+async function fnCancelAddTags() {
+    const form = document.getElementById("addtags-subscription");
+    form.style.display = "none";
+}
+
+async function handleAddTagsFormSubmit(event) {
+    event.preventDefault();
+
+    let inp = document.getElementsByClassName('inp-error');
+    for (let i = 0; i < inp.length; i++) {
+        inp[i].textContent = "";
+    }
+
+    const form = event.currentTarget;
+    const url = form.action + "/add-tags";
+    // console.log(url);
+
+    let tag = document.getElementById('id_tag_str').value;
+    let select = document.getElementsByTagName("option");
+
+    let tags = [];
+    for (let i = 0; i < select.length; i++) {
+        let sel = select.item(i);
+        if (sel.selected && sel.value.length > 0) {
+            tags[tags.length] = sel.value;
+        }
+    }
+    // console.log(tags);
+
+    let body = {"tag_str": tag, "tags": tags}
+    // console.log(body);
+    const bodyJsonString = JSON.stringify(body);
+    // console.log(bodyJsonString)
+
+    let responseData = undefined;
+    let isRedirect = false;
+    let urlRedirect = "";
+    let isReload = false;
+
+    try {
+        const fetchOptions = {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: bodyJsonString,
+        };
+
+        responseData = await fetch(url, fetchOptions);
+
+        // console.log(responseData.ok)
+        if (!responseData.ok) {
+            const errorMessage = await responseData.text();
+            throw new Error(errorMessage);
+        }
+
+        if (responseData.redirected) {
+            isRedirect = true;
+            // console.log(responseData.url)
+            urlRedirect = await check_redirect(responseData.url);
+            // console.log(urlRedirect)
+        }
+        else {
+            const responseJson = await responseData.json();
+            const succs = responseJson.detail.success;
+            const errs = responseJson.detail.errors;
+
+            if (Boolean(errs)) {
+                await errorsHandling(errs);
+            }
+            else if (Boolean(succs)) {
+                for (const suc of succs) {
+                    if (suc.key == "message") {
+                        alert(suc.value);
+                    }
+                    else if (suc.key == "reload") {
+                        isReload = true;
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`Error: ${error}`);
+            alert(`Error: ${error}`);
+            isRedirect = false;
+            isReload = true;
+    }
+    if (isRedirect) {
+            if (!Boolean(urlRedirect)) {
+                alert("Redirect.value is not URL");
+                urlRedirect = '/';
+            }
+            window.location.href = `${urlRedirect}`;
+    }
+    else if (isReload) {
+        window.location.reload();
+    }
+}
+
+const addTagsForm = document.getElementById("addtags-subscription");
+if (Boolean(addTagsForm)) {
+    addTagsForm.addEventListener("submit", handleAddTagsFormSubmit);
+}
+
+async function fnRemovePhoto(photo_id) {
+    const img = document.getElementById("photo-url");
+    // console.log(img)
+    const orig = document.getElementById("orig-img");
+    let quest = "Remove Photo?";
+    let isTrans = false;
+    if (Boolean(orig)) {
+        if (img.src != orig.src) {
+            quest = "Remove Transformation?";
+            isTrans = true;
+        }
+    }
+
+    if (confirm(quest)) {
+        let url = document.URL;
+        if (isTrans) {
+            url = url + "/" + img.alt;
+        }
+        try {
+            // console.log("DELETE " + url);
+            const fetchOptions = {
+                method: "DELETE",
+            };
+            const response = await fetch(url, fetchOptions);
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                alert(errorMessage);
+            } else {
+                if (isTrans) {
+                    window.location.reload()
+                } else {
+                    window.location.href = "/";
+                }
+            }
+        } catch (error) {
+            console.error(`Error: ${error}`);
+            alert(`Error: ${error}`);
+        }
+    }
+}
+
+async function fnRemoveComment(comment_id) {
+  const url = document.URL + "/comments/" + comment_id
+  try {
+    const fetchOptions = {
+            method: "DELETE",
+        };
+        const response = await fetch(url, fetchOptions);
+        if (!response.ok) {
+            const errorMessage = await response.text();
+            throw new Error(errorMessage);
+        }
+        window.location.reload()
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        alert(`Error: ${error}`);
+    }
+}
+
+async function postCommentAsJson({ url, formData }) {
+    const plainFormData = Object.fromEntries(formData.entries());
+    const formDataJsonString = JSON.stringify(plainFormData);
+    // console.log(formDataJsonString)
+
+    const fetchOptions = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: formDataJsonString,
+    };
+    const response = await fetch(url + "/comments", fetchOptions);
+    if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(errorMessage);
+    }
+
+    return response;
+}
+    
+async function handleCommentFormSubmit(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const url = form.action;
+
+    try {
+        const formData = new FormData(form);
+        const responseData = await postCommentAsJson({ url, formData });
+
+        const responseJson = await responseData.json();
+        const succs = responseJson.detail.success;
+        const errs = responseJson.detail.errors;
+
+        if (Boolean(errs)) {
+            await errorsHandling(errs);
+        }
+        else if (Boolean(succs)) {
+            for (const suc of succs) {
+                if (suc.key == "message") {
+                    alert(suc.value);
+                }
+                else if (suc.key == "reload") {
+                    document.forms["comment-form"]["text"].value = "";
+                    window.location.reload();
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        alert(`Error: ${error}`);
+    }
+}
+
+const commentForm = document.getElementById("comment-subscription");
+if (Boolean(commentForm)) {
+    commentForm.addEventListener("submit", handleCommentFormSubmit);
+}
+</script>
+    
+{% endblock %}

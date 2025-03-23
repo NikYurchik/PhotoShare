@@ -25,7 +25,7 @@ class DateTimeABC(CreatedABC):
 class User(Base, PrimaryKeyABC, CreatedABC):
     __tablename__ = "users"
     # id = Column(Integer, primary_key=True)
-    username = Column(String(50))
+    username = Column(String(50), nullable=False, unique=True)
     email = Column(String(250), nullable=False, unique=True)                   
     password = Column(String(255), nullable=False)
     # created_at = Column('created_at', DateTime, default=func.now())
@@ -62,20 +62,15 @@ tag_photo_association = Table(
     UniqueConstraint("tag_id", "photo_id", name="uq_tag_m2m_photo"),
  )
 
-# class Tag2Photo(Base):
-#     __tablename__ = "tag_m2m_photo"
-#     id = Column(Integer, primary_key=True)
-#     tag_id = Column(Integer, ForeignKey('tags.id', ondelete='CASCADE'))
-#     photo_id = Column(Integer, ForeignKey('photos.id', ondelete='CASCADE'))
-#     tag = relationship('Tag', backref='tags')
-#     photo = relationship('Photo', backref='photos')
-
 
 class PhotoURL(Base, PrimaryKeyABC, DateTimeABC):
     __tablename__ = "photo_urls"
     # id = Column(Integer, primary_key=True)
     file_url = Column(String, nullable=False, unique=True)
     qr_url = Column(String(255), nullable=True, unique=True)
+    #
+    params = Column(String, nullable=True)      # Dictionary of Params
+    #
     photo_id = Column(Integer, ForeignKey("photos.id", ondelete='CASCADE'))
     # created_at = Column('created_at', DateTime, default=func.now())
     photo = relationship('Photo', backref='photo_urls')

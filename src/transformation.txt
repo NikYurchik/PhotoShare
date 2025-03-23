@@ -1,0 +1,244 @@
+Описание квалификаторов трансформации и некоторых моментов файла "transformation.json".
+
+1. Каждый квалификатор длжен содержать параметр "prefix", содержащий префикс команды (например "h" для квалификатора "height").
+2. Если список команд в словаре "commands" нужно предствить в виде радиокнопок, то квалификатор должен содержать параметр "type": "radio".
+   2.1. У каждой команды должен быть параметр "value" со значением, которое будет использоваться в качестве имени команды для Cloudinary.
+   2.2. Радио-кнопки будут располагаться горизонтально. Если их нужно разместить вертикально,
+        то вместе с параметром "type": "radio" должен быть параметр "direction": "vertical"
+3. Если у команды список деталей (или у детали список поддеталей) нужно представить радиокнопками,
+   то вместо параметра "details" нужно использовать параметр "radio".
+   3.1. Если деталь "radio" не должна возвращать никакого значения или должна возвращать значение после своих поддеталей,
+        то у нее не должно быть параметра "detail".
+   3.2. Если деталь "radio" должна возвращать значение после своих поддеталей, то в списке деталей после детали "radio"
+        должна быть деталь с параметром  "radio_value": "radio" и шаблоном возвращаемого значения в параметре "detail".
+
+4. Выражение в <> заменяется на элемент ввода значения или выбора из выпадающего списка.
+   Если значение отсутствует (необязательно), то элемент считается пропущеным и не формируется.
+5. Если у команды или детали в зависимости от ввода меняется форма ввода либо допустимые занчения,
+   то вместо выпадающего списка нужно использовать радиокнопки.
+6. Если номер детали (num_detail) отсутствует, то по-умолчанию считается ее порядковый номер в списке.
+7. У любой детали могут быть свои под-детали, которые "раскручиваются" аналогично деталям.
+8. Если у детали отсутствует "required", то по-умолчанию False. В выпадающем списке 1-й элемент всегда пустой.
+   У числовых деталей в случае отсутствия значения "default" принудительно устанавливается значение, равное "min" или 0.
+9. Если у детали есть "depends": [{"qualifier": "crop", "command": "thumb"}], то она отображается только если отображена 
+   указанная команда указанного квалификатора.
+10. Если у команды есть "affects": {"qualifier": "gravity", "command": "auto", "num_detail": "3"}, то она влияет на отображение указанной детали
+    в указанной команде указанного квалификатора.
+
+===================================================================================================================================================
+
+qualifiers - квалификаторы трансформации
+    id: int - 
+    name: str - {height, width, gravity, crop}, effect, radius, format, quality
+
+
+height (h_ in URLs):
+    h_<height> - The height of the asset. Set to:
+                    An integer value to set the height to the given number in pixels (e.g., 150 sets the height to exactly 150 pixels).
+                    A decimal value to set the height to a multiple of the original dimension (e.g., 0.5 sets the height to half the original width).
+                    ih to specify the initial height of the original image.
+
+
+width (w_ in URLs):
+    w_<width> - The width of the asset. Set to:
+                    An integer value to set the width to the given number in pixels (e.g., 150 sets the width to exactly 150 pixels).
+                    A decimal value to set the width to a multiple of the original dimension (e.g., 0.5 sets the width to half the original width).
+                    iw to specify the initial width of the original image.
+
+
+gravity (g_ in URLs):
+    g_center (the default value)
+    g_north_east, 
+    g_north, 
+    g_north_west, 
+    g_west, 
+    g_south_west, 
+    g_south, 
+    g_south_east, 
+    g_east, 
+    g_face - to automatically detect the largest face in an image and make it the focus of the crop.
+    g_adv_eyes - Automatically detect all eyes in an image;
+    g_adv_face - Automatically detect the largest face in an image;
+    g_adv_faces - Automatically detect all faces in an image;
+    g_face - Automatically detect the largest face in an image and make it the focus of the transformation;
+    g_face:center - Same as face gravity, but defaults to center gravity if no face is detected;
+    g_faces - Same as face gravity, but detects all the faces in an image and uses the rectangle containing all face coordinates
+              as the basis of the transformation;
+    g_faces:center - Same as faces gravity, but defaults to center gravity if no face is detected.
+
+    g_auto[:<algorithm>][:<focal gravity>][:<thumb aggressiveness>] - automatically identify the most interesting regions in the asset, and include in the crop.
+        algorithm:
+            subject: Applies deep-learning algorithms to identify the subjects of an image that are most likely to attract a person's gaze.
+            classic: Uses a combination of saliency heuristics to automatically detect significant regions in the image.
+        focal gravity:
+            face, faces, ...
+        thumb aggressiveness: Image only. Relevant only for 'thumb' cropping.
+                              The level of aggressiveness of the thumb cropping algorithm between 0 and 100.
+                              100 keeps more of the original image.
+                              0 crops more aggressively and zooms in.
+
+
+crop (c_ in URLs):
+    c_crop - Extracts the specified size from the original image without distorting or scaling the delivered asset.
+    c_fill - Creates an asset with the exact specified width and height without distorting the asset.
+    c_fill_pad - Tries to prevent a "bad crop" by first attempting to use the fill mode, but adding some padding
+                 if the algorithm determines that more of the original image needs to be included in the final image
+    c_fit - Scales the asset up or down so that it takes up as much space as possible within a bounding box defined by
+            the specified dimension parameters without cropping any of it.
+    c_lfill - The lfill (limit fill) mode is the same as fill but only if the original image is larger than the specified resolution limits.
+    c_limit - Same as the fit mode but only if the original asset is larger than the specified limit (width and height),
+              in which case the asset is scaled down so that it takes up as much space as possible within a bounding box defined by
+              the specified width and height parameters.
+    c_lpad - The lpad (limit pad) mode is the same as pad but only if the original asset is larger than the specified limit (width and height),
+             in which case the asset is scaled down to fill the specified width and height while retaining the original aspect ratio (by default)
+             and with all of the original asset visible. 
+    c_mfit - The mfit (minimum fit) mode is the same as fit but only if the original image is smaller than the specified minimum (width and height),
+             in which case the image is scaled up so that it takes up as much space as possible within a bounding box defined by
+             the specified width and height parameters.
+    c_mpad - The mpad (minimum pad) mode is the same as pad but only if the original image is smaller than the specified minimum (width and height),
+             in which case the image is unchanged but padding is added to fill the specified dimensions.
+    c_pad - Resizes the asset to fill the specified width and height while retaining the original aspect ratio (by default)
+            and with all of the original asset visible.
+    c_scale - Resizes the asset exactly to the specified width and height. All original asset parts are visible, but might be stretched
+              or shrunk if the dimensions you request have a different aspect ratio than the original.
+              If only width or only height is specified, then the asset is scaled to the new dimension while retaining the original aspect ratio.
+    c_thumb - Creates image thumbnails from either face-detection or custom coordinates. Must always be accompanied by the g (gravity) parameter
+              set to one of the face detection or one of the g_custom values.
+
+
+effect (e_ in URLs):
+    e_adv_redeye - Automatically removes red eyes from an image.
+    e_art:<filter> - Applies the selected artistic filter.
+        Possible values: al_dente, athena, audrey, aurora, daguerre, eucalyptus, fes, frost, hairspray, hokusai, incognito,
+                         linen, peacock, primavera, quartz, red_rock, refresh, sizzle, sonnet, ukulele, zorro
+    e_auto_brightness[:<blend percentage>] - Automatically adjusts the image brightness and blends the result with the original image.
+        <blend percentage> - The blend percentage, where 0 means only use the original and 100 means only use the adjusted brightness result.
+                             Range: 0 to 100. Default: 100.
+    e_auto_color[:<blend percentage>] - Automatically adjusts the image color balance and blends the result with the original image.
+        <blend percentage> - The blend percentage, where 0 means only use the original and 100 means only use the adjusted color result.
+                             Range: 0 to 100. Default: 100.
+    e_auto_contrast[:<blend percentage>] - Automatically adjusts the image contrast and blends the result with the original image.
+        <blend percentage> - The blend percentage, where 0 means only use the original and 100 means only use the adjusted contrast result.
+                             Range: 0 to 100. Default: 100.
+    e_bgremoval[:screen][:<color to remove>] - Makes the background of an image transparent (or solid white for JPGs). Use when the background is a uniform color.
+        screen - If screen is specified, provides better results for images with near perfect green/blue background.
+        <color to remove> - The background color as an RGB/A hex code. Overrides the algorithm's choice of background color.
+                            (e_bgremoval:rgb:ffff00)
+    e_blackwhite[:<threshold>] - Converts an image to black and white.
+        <threshold> - The balance between black (100) and white (0).
+                      Range: 0 to 100. Default: 50.
+    e_blue:<level> - Adjust an image's blue channel.
+        <level> - The level of blue. Range: -100 to 100. Default: 0.
+    e_blur[:<strength>] - Blurs all detected faces in an image.
+        <strength> - The strength of the blur. Range: 1 to 2000. Default: 500.
+    e_blur_region[:<strength>] - Applies a blurring filter to the region of an image specified by x, y, width and height.
+                                 If no region is specified, the whole image is blurred. (e_blur_region:1500,y_0.75)
+        <strength> - The strength of the blur. Range: 1 to 2000. Default: 100.
+    e_brightness:<level> - Adjusts the image brightness.
+        <level> - The level of brightness. The lower the number the lower the brightness.
+                  Range: -99 to 100. Default: 80.
+    e_brightness_hsb[:<level>] - Adjusts image brightness modulation in HSB to prevent artifacts in some images.
+        <level> - The level of modulation. Range: -99 to 100. Default: 80.
+    e_colorize[:<level>] - Colorizes an image. By default, gray is used for colorization. You can specify a different color using the color qualifier.
+        <level> - The strength of the color. Range: 0 to 100. Default: 100.
+    e_contrast[:level_<level>][;type_<function type>] - Adjusts an image contrast.
+        <level> - The level of contrast. The lower the number the lower the contrast.
+                    Range (sigmoidal): -100 to 100. Default: 0.
+                    Range (linear): 1 to 200. Default: 100.
+        <function type> - The function to use for the contrast effect.
+            Possible values:
+                sigmoidal: Uses a sigmoidal function.
+                linear: Uses a linear function that is the equivalent of CSS contrast.
+            Default: sigmoidal.
+    e_fill_light[:<blend>][:<bias>] - Adjusts the fill light and optionally blends the result with the original image.
+        <blend> - How much to blend the effect (0 means use only the original, 100 means use only the adjusted fill light result).
+                  Range: 0 to 100. Default: 100.
+        <bias> - The bias to apply to the fill light effect.
+                 Range: -100 to 100. Default: 0.
+    e_gamma[:<level>] - Adjusts the image gamma level.
+        <level> - The level of gamma. The lower the number the lower the gamma level.
+                  Range: -50 to 150. Default: 0.
+    e_gradient_fade[:<type>][:<strength>] - Applies a gradient fade effect from the edge of an image.
+                                            Use x or y to indicate from which edge to fade and how much of the image should be faded.
+        <type> - Whether to apply symmetry to the fade.
+            Possible values:
+                symmetric: Fade symmetrically from multiple edges
+                symmetric_pad: Fade the image into the added padding
+            Default: No symmetry applied.
+        <strength> - The strength of the fade effect
+                     Range: 0 to 100. Default: 20.
+    e_grayscale - Converts an image to grayscale (multiple shades of gray).
+    e_green[:<level>] - Adjust an image's green channel.
+        <level> - The level of green. Range: -100 to 100. Default: 0.
+    e_hue[:<level>] - Adjusts an image's hue.
+        <level> - The level of hue. Range: -100 to 100. Default: 80.
+    e_improve[:<mode>][:<blend>] - Adjusts an image's colors, contrast and brightness to improve its appearance.
+        <mode> - The type of improvements to make. Use indoor mode to get better results on images with indoor lighting and shadows.
+                    Possible values: outdoor, indoor.
+                    Default: outdoor.
+        <blend> - How much to blend the improved result with the original image, where 0 means use only the original and 100 means use only the improved result.
+                  Range: 0 to 100. Default: 100.
+    e_make_transparent[:<tolerance>] - Makes the background of an image or video transparent (or solid white for formats that do not support transparency).
+        <tolerance> - The tolerance to accommodate variance in the background color.
+                      Range: 0 to 100. Default: 10.
+    e_negate - Creates a negative of an image.
+    e_pixelate_faces[:<square size>] - Pixelates all detected faces in an image.
+        <square size> - The width in pixels of each pixelation square.
+                        Range: 1 to 200. Default: Determined by an algorithm based on the image dimensions.
+    e_red[:<level>] - Adjust an image's red channel.
+    e_redeye - Automatically removes red eyes in an image.
+    e_saturation[:<level>] - Adjusts an image or video saturation level.
+        <level> - The level of saturation. The lower the number the lower the saturation.
+                  Range: -100 to 100. Default: 80.
+    e_sepia[:<level>] - Changes the color scheme of an image to sepia.
+    e_sharpen[:<strength>] - Applies a sharpening filter.
+    e_upscale - Uses AI-based prediction to add fine detail while upscaling small images.
+    e_vignette[:<level>] - Applies a vignette effect to an image.
+    o_<opacity level> - Adjusts the opacity of an asset and makes it semi-transparent.
+
+radius (r_ in URLs):
+    r_<pixel value> - Rounds all four corners of an asset by the same pixel radius. The radius value to apply to all four corners of the asset.
+    r_<value1>[:<value2>][:<value3>][:<value4>] - Rounds selected corners of an image, based on the number of values specified, similar to the border-radius CSS property.
+        1 values - Similar r_<pixel value>
+        2 values -  value1 controls the pixel radius of the top-left and bottom-right corners.
+                    value2 controls the pixel radius of the top-right and bottom-left corners.
+        3 values -  value1 controls the pixel radius of the top-left corner.
+                    value2 controls the pixel radius of the top-right & bottom-left corners.
+                    value3 controls the pixel radius of the bottom-right corner.
+        4 values -  The pixel radius of each corner is defined separately, where the values represent the corners in clockwise order, starting with the top-left.
+    r_max - Delivers the asset as a rounded circle or oval shape. If the input asset is a 1:1 aspect ratio, it will be a circle. If rectangular, it will be an oval.
+
+fetch_format (f_ or fl_ in URLs):
+    f_auto[:image] - Automatically generates (if needed) and delivers an asset in the most optimal format
+                     for the requesting browser in order to minimize the file size.
+    f_<supported_format> - Converts and delivers an asset in the specified format.
+        <supported_format> - "ai" (Adobe Illustrator),
+                             "gif" (Animated GIF),
+                             "png" (Animated PNG),
+                             "bmp",
+                             "gif",
+                             "ico",
+                             "jpg", "jpe", "jpeg" (JPEG),
+                             "jp2" (JPEG 2000),
+                             "png",
+                             "psd" (PhotoShop Document),
+                             "arw", "cr2" (Raw image files),
+                             "svg",
+                             "tif", "tiff" (TIFF)
+
+quality (q_ in URLs):
+    q_<quality level>[:<chroma>] - Sets the quality to the specified level.
+        <quality level> - The level of quality. Range: 1 to 100.
+        <chroma> - The chroma subsampling setting. See Toggling chroma subsampling for details.
+            Possible values:
+                420 - forces subsampling
+                444 - prevents subsampling.
+    q_auto[:<quality type>] - Delivers an asset with an automatically determined level of quality.
+    q_auto: The optimal balance between file size and visual quality. By default, this is the same as q_auto:good,
+            while it can automatically switch to the more aggressive q_auto:eco mode (see the note on Save-data support below).
+    q_auto:best: Less aggressive algorithm. Generates bigger files with potentially better visual quality.
+    q_auto:good: Ensuring a relatively small file size with good visual quality.
+    q_auto:eco: More aggressive algorithm, which results in smaller files of slightly lower visual quality.
+    q_auto:low: Most aggressive algorithm, which results in the smallest files of low visual quality.
+
+

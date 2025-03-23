@@ -1,0 +1,1214 @@
+{
+    "qualifiers": {
+        "height": {
+            "prefix": "h",
+            "type": "radio",
+            "commands": [
+                {
+                    "command": "#34;ih#34;",
+                    "value": "ih",
+                    "description": "#34;ih#34; to specify the initial height of the original image."
+                },
+                {
+                    "command": "px",
+                    "value": "<px>",
+                    "description": "An integer value to set the height to the given number in pixels.",
+                    "details": [
+                        {
+                            "value": "<pixel>",
+                            "required": "true",
+                            "description": "An integer value to set the height to the given number in pixels (e.g., 150 sets the height to exactly 150 pixels).",
+                            "range_int": {
+                                "type": "int",
+                                "min": "10",
+                                "max": "4608"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "%",
+                    "value": "<%>",
+                    "description": "A decimal value to set the height to a multiple of the original dimension.",
+                    "details": [
+                        {
+                            "value": "<percent>",
+                            "required": "true",
+                            "description": "A decimal value to set the height to a multiple of the original dimension (e.g., 0.5 sets the height to half the original width).",
+                            "range_float": {
+                                "type": "float",
+                                "min": "0.01",
+                                "max": "4"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "width": {
+            "prefix": "w",
+            "type": "radio",
+            "commands": [
+                {
+                    "command": "#34;iw#34;",
+                    "value": "iw",
+                    "description": "#34;iw#34; to specify the initial width of the original image."
+                },
+                {
+                    "command": "px",
+                    "value": "<px>",
+                    "description": "An integer value to set the width to the given number in pixels.",
+                    "details": [
+                        {
+                            "value": "<pixel>",
+                            "required": "true",
+                            "description": "An integer value to set the width to the given number in pixels (e.g., 150 sets the width to exactly 150 pixels).",
+                            "range_int": {
+                                "type": "int",
+                                "min": "10",
+                                "max": "8192"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "%",
+                    "value": "<%>",
+                    "description": "A decimal value to set the width to a multiple of the original dimension.",
+                    "details": [
+                        {
+                            "value": "<percent>",
+                            "required": "true",
+                            "description": "A decimal value to set the width to a multiple of the original dimension (e.g., 0.5 sets the height to half the original width).",
+                            "range_float": {
+                                "type": "float",
+                                "min": "0.01",
+                                "max": "4"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "gravity": {
+            "prefix": "g",
+            "description": "Which part of an image to focus on, and thus which part of the image to keep, when any part of the image is cropped. For overlays, this setting determines where to place the overlay.",
+            "commands": [
+                {
+                    "command": "center",
+                    "description": "The default value."
+                },
+                {
+                    "command": "north_east",
+                    "description": ""
+                },
+                {
+                    "command": "north",
+                    "description": ""
+                },
+                {
+                    "command": "north_west",
+                    "description": ""
+                },
+                {
+                    "command": "west",
+                    "description": ""
+                },
+                {
+                    "command": "south_west",
+                    "description": ""
+                },
+                {
+                    "command": "south",
+                    "description": ""
+                },
+                {
+                    "command": "south_east",
+                    "description": ""
+                },
+                {
+                    "command": "east",
+                    "description": ""
+                },
+                {
+                    "command": "face",
+                    "description": "Automatically detect the largest face in an image and make it the focus of the crop."
+                },
+                {
+                    "command": "adv_eyes",
+                    "description": "Automatically detect all eyes in an image."
+                },
+                {
+                    "command": "adv_face",
+                    "description": "Automatically detect the largest face in an image."
+                },
+                {
+                    "command": "adv_faces",
+                    "description": "Automatically detect all faces in an image."
+                },
+                {
+                    "command": "face",
+                    "description": "Automatically detect the largest face in an image and make it the focus of the transformation."
+                },
+                {
+                    "command": "face:center",
+                    "description": "Same as face gravity, but defaults to center gravity if no face is detected."
+                },
+                {
+                    "command": "faces",
+                    "description": "Same as face gravity, but detects all the faces in an image and uses the rectangle containing all face coordinates as the basis of the transformation."
+                },
+                {
+                    "command": "faces:center",
+                    "description": "Same as faces gravity, but defaults to center gravity if no face is detected."
+                },
+                {
+                    "command": "auto",
+                    "description": "Automatically identify the most interesting regions in the image, and include in the crop.",
+                    "details": [
+                        {
+                            "detail": ":<algorithm>",
+                            "num_detail": "1",
+                            "description": "The algorithm to apply.",
+                            "list_value": [
+                                {
+                                    "value": "subject",
+                                    "description": "Applies deep-learning algorithms to identify the subjects of an image that are most likely to attract a person#34;s gaze."
+                                },
+                                {
+                                    "value": "classic",
+                                    "description": "Uses a combination of saliency heuristics to automatically detect significant regions in the image."
+                                }
+                            ]
+                        },
+                        {
+                            "detail": ":<focal gravity>",
+                            "num_detail": "2",
+                            "description": "Controls which elements are given higher priority for inclusion by the cropping algorithm.",
+                            "list_value": [
+                                {
+                                    "value": "face"
+                                },
+                                {
+                                    "value": "faces"
+                                },
+                                
+                                {
+                                    "value": "adv_eyes"
+                                },
+                                
+                                {
+                                    "value": "adv_face"
+                                },
+                                
+                                {
+                                    "value": "adv_faces"
+                                }
+                            ]
+                        },
+                        {
+                            "detail": ":<thumb_aggressiveness>",
+                            "num_detail": "3",
+                            "description": "Thumb aggressiveness. Relevant only for #34;thumb#34; cropping. The level of aggressiveness of the thumb cropping algorithm between 0 and 100. 100 keeps more of the original image. 0 crops more aggressively and zooms in.",
+                            "depends": {"qualifier": "crop", "command": "thumb"},
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100"
+                            }
+                        }
+                    ]
+                }
+           ]
+        },
+
+        "crop": {
+            "prefix": "c",
+            "description": "Changes the size of the delivered image according to the requested width & height dimensions.",
+            "commands": [
+                {
+                    "command": "crop",
+                    "description": "Extracts the specified size from the original image without distorting or scaling the delivered image."
+                },
+                {
+                    "command": "fill",
+                    "description": "Creates an image with the exact specified width and height without distorting the image."
+                },
+                {
+                    "command": "fill_pad",
+                    "description": "Tries to prevent a \"bad crop\" by first attempting to use the fill mode, but adding some padding if the algorithm determines that more of the original image needs to be included in the final image."
+                },
+                {
+                    "command": "fit",
+                    "description": "Scales the image up or down so that it takes up as much space as possible within a bounding box defined by the specified dimension parameters without cropping any of it."
+                },
+                {
+                    "command": "lfill",
+                    "description": "The lfill (limit fill) mode is the same as fill but only if the original image is larger than the specified resolution limits."
+                },
+                {
+                    "command": "limit",
+                    "description": "Same as the fit mode but only if the original image is larger than the specified limit (width and height), in which case the image is scaled down so that it takes up as much space as possible within a bounding box defined by the specified width and height parameters."
+                },
+                {
+                    "command": "lpad",
+                    "description": "The lpad (limit pad) mode is the same as pad but only if the original image is larger than the specified limit (width and height), in which case the image is scaled down to fill the specified width and height while retaining the original aspect ratio (by default) and with all of the original image visible."
+                },
+                {
+                    "command": "mfit",
+                    "description": "The mfit (minimum fit) mode is the same as fit but only if the original image is smaller than the specified minimum (width and height), in which case the image is scaled up so that it takes up as much space as possible within a bounding box defined by the specified width and height parameters."
+                },
+                {
+                    "command": "mpad",
+                    "description": "The mpad (minimum pad) mode is the same as pad but only if the original image is smaller than the specified minimum (width and height), in which case the image is unchanged but padding is added to fill the specified dimensions."
+                },
+                {
+                    "command": "pad",
+                    "description": "Resizes the image to fill the specified width and height while retaining the original aspect ratio (by default) and with all of the original image visible."
+                },
+                {
+                    "command": "scale",
+                    "description": "Resizes the image exactly to the specified width and height. All original image parts are visible, but might be stretched or shrunk if the dimensions you request have a different aspect ratio than the original. If only width or only height is specified, then the image is scaled to the new dimension while retaining the original aspect ratio."
+                },
+                {
+                    "command": "thumb",
+                    "description": "Creates image thumbnails from either face-detection or custom coordinates. Must always be accompanied by the g (gravity) parameter set to one of the face detection or one of the g_custom values."
+                }
+
+            ]
+        },
+
+        "radius": {
+            "prefix": "r",
+            "type": "radio",
+            "commands": [
+                {
+                    "command": "max",
+                    "value": "max",
+                    "description": "Delivers the image as a rounded circle or oval shape. If the input image is a 1:1 aspect ratio, it will be a circle. If rectangular, it will be an oval."
+                },
+                {
+                    "command": "pixel value",
+                    "value": "<pixel_value>",
+                    "description": "Rounds selected corners of an image, based on the number of values specified, similar to the border-radius CSS property.",
+                    "details": [
+                        {
+                            "detail": "<value1>",
+                            "required": "true",
+                            "description": "Rounds all four corners of an image by the same pixel radius. The radius value to apply to all four corners of the image.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "1",
+                                "max": "1024"
+                            }
+                        },
+                        {
+                            "detail": ":<value2>",
+                            "description": "#34;value1#34; controls the pixel radius of the top-left and bottom-right corners. #34;value2#34; controls the pixel radius of the top-right and bottom-left corners.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "1024"
+                            }
+                        },
+                        {
+                            "detail": ":<value3>",
+                            "description": "#34;value1#34; controls the pixel radius of the top-left corner. #34;value2#34; controls the pixel radius of the top-right and bottom-left corners. #34;value3#34; controls the pixel radius of the bottom-right corner.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "1024"
+                            }
+                        },
+                        {
+                            "detail": ":<value4>",
+                            "description": "The pixel radius of each corner is defined separately, where the values represent the corners in clockwise order, starting with the top-left.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "1024"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "fetch_format": {
+            "prefix": "f",
+            "type": "radio",
+            "commands": [
+                {
+                    "command": "auto",
+                    "value": "auto",
+                    "description": "Automatically generates (if needed) and delivers an image in the most optimal format for the requesting browser in order to minimize the file size."
+                },
+                {
+                    "command": "<supported_format>",
+                    "value": "<supported_format>",
+                    "description": "Converts and delivers an image in the specified format.",
+                    "details": [
+                        {
+                            "value": "<supported_format>",
+                            "required": "true",
+                            "list_value": [
+                                {
+                                    "value": "ai",
+                                    "description": "AI (Adobe Illustrator)."
+                                },
+                                {
+                                    "value": "gif",
+                                    "description": "Animated GIF"
+                                },
+                                {
+                                    "value": "png",
+                                    "description": "Animated PNG"
+                                },
+                                {
+                                    "value": "bmp",
+                                    "description": "BMP"
+                                },
+                                {
+                                    "value": "gif",
+                                    "description": "GIF"
+                                },
+                                {
+                                    "value": "ico",
+                                    "description": "ICO"
+                                },
+                                {
+                                    "value": "jpg",
+                                    "description": "JPEG"
+                                },
+                                {
+                                    "value": "jpe",
+                                    "description": "JPEG"
+                                },
+                                {
+                                    "value": "jpeg",
+                                    "description": "JPEG"
+                                },
+                                {
+                                    "value": "jp2",
+                                    "description": "JPEG 2000"
+                                },
+                                {
+                                    "value": "png",
+                                    "description": "PNG"
+                                },
+                                {
+                                    "value": "psd",
+                                    "description": "PSD (PhotoShop Document)"
+                                },
+                                {
+                                    "value": "arw",
+                                    "description": "Raw image files"
+                                },
+                                {
+                                    "value": "cr2",
+                                    "description": "Raw image files"
+                                },
+                                {
+                                    "value": "svg",
+                                    "description": "SVG"
+                                },
+                                {
+                                    "value": "tif",
+                                    "description": "TIFF"
+                                },
+                                {
+                                    "value": "tiff",
+                                    "description": "TIFF"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "effect": {
+            "prefix": "e",
+            "description": "Applies the specified effect to the image.",
+            "commands": [
+                {
+                    "command": "art",
+                    "description": "Applies the selected artistic filter.",
+                    "details": [
+                        {
+                            "detail": ":<filter>",
+                            "description": "Possible values",
+                            "required": "true",
+                            "list_value": [
+                                {
+                                    "value": "al_dente"
+                                },
+                                {
+                                    "value": "athena"
+                                },
+                                {
+                                    "value": "audrey"
+                                },
+                                {
+                                    "value": "aurora"
+                                },
+                                {
+                                    "value": "daguerre"
+                                },
+                                {
+                                    "value": "eucalyptus"
+                                },
+                                {
+                                    "value": "fes"
+                                },
+                                {
+                                    "value": "frost"
+                                },
+                                {
+                                    "value": "hairspray"
+                                },
+                                {
+                                    "value": "hokusai"
+                                },
+                                {
+                                    "value": "incognito"
+                                },
+                                {
+                                    "value": "linen"
+                                },
+                                {
+                                    "value": "peacock"
+                                },
+                                {
+                                    "value": "primavera"
+                                },
+                                {
+                                    "value": "quartz"
+                                },
+                                {
+                                    "value": "red_rock"
+                                },
+                                {
+                                    "value": "refresh"
+                                },
+                                {
+                                    "value": "sizzle"
+                                },
+                                {
+                                    "value": "sonnet"
+                                },
+                                {
+                                    "value": "ukulele"
+                                },
+                                {
+                                    "value": "zorro"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "command": "auto_brightness",
+                    "description": "Automatically adjusts the image brightness and blends the result with the original image.",
+                    "details": [
+                        {
+                            "detail": ":<blend_percentage>",
+                            "description": "The blend percentage, where 0 means only use the original and 100 means only use the adjusted brightness result.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100",
+                                "description": "Range: 0 to 100. Default: 100."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "auto_color",
+                    "description": "Automatically adjusts the image color balance and blends the result with the original image.",
+                    "details": [
+                        {
+                            "detail": ":<blend_percentage>",
+                            "description": "The blend percentage, where 0 means only use the original and 100 means only use the adjusted color result.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100",
+                                "description": "Range: 0 to 100. Default: 100."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "auto_contrast",
+                    "description": "Automatically adjusts the image contrast and blends the result with the original image.",
+                    "details": [
+                        {
+                            "detail": ":<blend_percentage>",
+                            "description": "The blend percentage, where 0 means only use the original and 100 means only use the adjusted contrast result.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100",
+                                "description": "Range: 0 to 100. Default: 100."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "bgremoval",
+                    "description": "Makes the background of an image transparent (or solid white for JPGs). Use when the background is a uniform color.",
+                    "details": [
+                        {
+                            "detail": ":screen",
+                            "description": "Provides better results for images with near perfect green/blue background.",
+                            "list_value": [
+                                {
+                                    "value": "screen"
+                                }
+                            ]
+                        },
+                        {
+                            "detail": ":rgb:<color>",
+                            "description": "The background color as an RGB/A hex code. Overrides the algorithm#34;s choice of background color.",
+                            "range_color": {
+                                "type": "hex",
+                                "description": "(e_bgremoval:rgb:ffff00)"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "blackwhite",
+                    "description": "Converts an image to black and white.",
+                    "details": [
+                        {
+                            "detail": ":<threshold>",
+                            "description": "The balance between black (100) and white (0).",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "50",
+                                "description": "Range: 0 to 100. Default: 50."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "blue",
+                    "description": "Adjust an image#34;s blue channel.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of blue.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-100",
+                                "max": "100",
+                                "default": "0",
+                                "description": "Range: -100 to 100. Default: 0."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "green",
+                    "description": "Adjust an image#34;s green channel.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of green.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-100",
+                                "max": "100",
+                                "default": "0",
+                                "description": "Range: -100 to 100. Default: 0."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "red",
+                    "description": "Adjust an image#34;s red channel.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of red.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-100",
+                                "max": "100",
+                                "default": "0",
+                                "description": "Range: -100 to 100. Default: 0."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "blur",
+                    "description": "Blurs all detected faces in an image.",
+                    "details": [
+                        {
+                            "detail": ":<strength>",
+                            "description": "The strength of the blur.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "1",
+                                "max": "2000",
+                                "default": "500",
+                                "description": "Range: 1 to 2000. Default: 500."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "blur_region",
+                    "description": "Applies a blurring filter to the region of an image specified by x, y, width and height.",
+                    "details": [
+                        {
+                            "detail": ":<strength>",
+                            "description": "The strength of the blur. If no region is specified, the whole image is blurred.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "1",
+                                "max": "2000",
+                                "default": "100",
+                                "description": "Range: 1 to 2000. Default: 100."
+                            },
+                            "details": [
+                                {
+                                    "detail": ",y_<height>",
+                                    "range_float": {
+                                        "type": "float",
+                                        "min": "0.01",
+                                        "max": "1",
+                                        "description": "(e_blur_region:1500,y_0.75)"
+                                    }
+                                },
+                                {
+                                    "detail": ",x_<width>",
+                                    "range_float": {
+                                        "type": "float",
+                                        "min": "0.01",
+                                        "max": "1",
+                                        "description": "(e_blur_region:1500,x_0.75)"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "command": "brightness",
+                    "description": "Adjusts the image brightness.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of brightness. The lower the number the lower the brightness.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-99",
+                                "max": "100",
+                                "default": "80",
+                                "description": "Range: -99 to 100. Default: 80."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "brightness_hsb",
+                    "description": "Adjusts image brightness modulation in HSB to prevent artifacts in some images.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of modulation.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-99",
+                                "max": "100",
+                                "default": "80",
+                                "description": "Range: -99 to 100. Default: 80."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "colorize",
+                    "description": "Colorizes an image. By default, gray is used for colorization. You can specify a different color using the color qualifier.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The strength of the color.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100",
+                                "description": "Range: 0 to 100. Default: 100."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "contrast",
+                    "description": "Adjusts an image contrast.",
+                    "details": [
+                        {
+                            "description": "The level of contrast. The lower the number the lower the contrast.",
+                            "radio": [
+                                {
+                                    "type": "str",
+                                    "detail": "sigmoidal",
+                                    "value": "",
+                                    "description": "Uses a sigmoidal function.",
+                                    "details": [
+                                        {
+                                            "type": "int",
+                                            "detail": ":level_<of_contrast>",
+                                            "description": "The level of contrast.",
+                                            "range_int": {
+                                                "type": "int",
+                                                "min": "-100",
+                                                "max": "100",
+                                                "default": "0",
+                                                "description": "Range (sigmoidal): -100 to 100. Default: 0."
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "str",
+                                    "value": "linear",
+                                    "description": "Uses a linear function that is the equivalent of CSS contrast.",
+                                    "details": [
+                                        {
+                                            "type": "int",
+                                            "detail": ":level_<of_contrast>",
+                                            "description": "The level of contrast.",
+                                            "range_int": {
+                                                "type": "int",
+                                                "min": "1",
+                                                "max": "200",
+                                                "default": "100",
+                                                "description": "Range (linear): 1 to 200. Default: 100."
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "radio_value": "radio",
+                            "detail": ";type_<function_type>",
+                            "description": "The function to use for the contrast effect."
+                        }
+                    ]
+                },
+                {
+                    "command": "fill_light",
+                    "description": "Adjusts the fill light and optionally blends the result with the original image.",
+                    "details": [
+                        {
+                            "detail": ":<blend>",
+                            "description": "How much to blend the effect (0 means use only the original, 100 means use only the adjusted fill light result).",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100",
+                                "description": "Range: 0 to 100. Default: 100."
+                            }
+                        },
+                        {
+                            "detail": ":<bias>",
+                            "description": "The bias to apply to the fill light effect.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-100",
+                                "max": "100",
+                                "default": "0",
+                                "description": "Range: -100 to 100. Default: 0."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "gamma",
+                    "description": "Adjusts the image gamma level.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of gamma. The lower the number the lower the gamma level.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-50",
+                                "max": "150",
+                                "default": "0",
+                                "description": "Range: -50 to 150. Default: 0."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "gradient_fade",
+                    "description": "Applies a gradient fade effect from the edge of an image.",
+                    "details": [
+                        {
+                            "detail": ":<type>",
+                            "description": "Whether to apply symmetry to the fade.",
+                            "direction": "vertical",
+                            "radio": [
+                                {
+                                    "detail": "no_symmetric",
+                                    "value": "",
+                                    "description": "No symmetry applied."
+                                },
+                                {
+                                    "value": "symmetric",
+                                    "description": "Fade symmetrically from multiple edges."
+                                },
+                                {
+                                    "value": "symmetric_pad",
+                                    "description": "Fade the image into the added padding."
+                                }
+                
+                            ]
+                        },
+                        {
+                            "detail": ":<strength>",
+                            "description": "The strength of the fade effect",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "20",
+                                "description": "Range: 0 to 100. Default: 20."
+                            },
+                            "details": [
+                                {
+                                    "detail": ",x_<width>",
+                                    "description": "Use x or y to indicate from which edge to fade and how much of the image should be faded.",
+                                    "range_float": {
+                                        "type": "float",
+                                        "min": "-1",
+                                        "max": "1",
+                                        "description": "Positive values fade from the left (x). Negative values fade from the right (x)."
+                                    }
+                                },
+                                {
+                                    "detail": ",y_<height>",
+                                    "description": "Use x or y to indicate from which edge to fade and how much of the image should be faded.",
+                                    "range_float": {
+                                        "type": "float",
+                                        "min": "-1",
+                                        "max": "1",
+                                        "description": "Positive values fade from the top (y). Negative values fade from the bottom (y)."
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "command": "grayscale",
+                    "description": "Converts an image to grayscale (multiple shades of gray)."
+                },
+                {
+                    "command": "hue",
+                    "description": "Adjusts an image#34;s hue.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of hue.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-100",
+                                "max": "100",
+                                "default": "80",
+                                "description": "Range: -100 to 100. Default: 80."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "improve",
+                    "description": "Adjusts an image#34;s colors, contrast and brightness to improve its appearance.",
+                    "details": [
+                        {
+                            "detail": ":<mode>",
+                            "description": "The type of improvements to make. Use indoor mode to get better results on images with indoor lighting and shadows. Default: outdoor.",
+                            "list_value": [
+                                {
+                                    "value": "outdoor"
+                                },
+                                {
+                                    "value": "indoor"
+                                }
+                            ]
+                        },
+                        {
+                            "detail": ":<blend>",
+                            "description": "How much to blend the improved result with the original image, where 0 means use only the original and 100 means use only the improved result.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "100",
+                                "description": "Range: 0 to 100. Default: 100."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "make_transparent",
+                    "description": "Makes the background of an image or video transparent (or solid white for formats that do not support transparency).",
+                    "details": [
+                        {
+                            "detail": ":<tolerance>",
+                            "description": "The tolerance to accommodate variance in the background color.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "10",
+                                "description": "Range: 0 to 100. Default: 10."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "negate",
+                    "description": "Creates a negative of an image."
+                },
+                {
+                    "command": "pixelate_faces",
+                    "description": "Pixelates all detected faces in an image.",
+                    "details": [
+                        {
+                            "detail": ":<square_size>",
+                            "description": "The width in pixels of each pixelation square.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "200",
+                                "description": "Range: 1 to 200. Default: Determined by an algorithm based on the image dimensions."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "redeye",
+                    "description": "Automatically removes red eyes in an image."
+                },
+                {
+                    "command": "saturation",
+                    "description": "Adjusts an image or video saturation level.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of saturation. The lower the number the lower the saturation.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-100",
+                                "max": "100",
+                                "default": "80",
+                                "description": "Range: -100 to 100. Default: 80."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "sepia",
+                    "description": "Changes the color scheme of an image to sepia.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The level of sepia to apply.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "1",
+                                "max": "100",
+                                "default": "80",
+                                "description": "Range: 1 to 100. Default: 80."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "sharpen",
+                    "description": "Applies a sharpening filter.",
+                    "details": [
+                        {
+                            "detail": ":<strength>",
+                            "description": "The strength of the sharpening filter.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "1",
+                                "max": "2000",
+                                "default": "100",
+                                "description": "Range: 1 to 2000. Default: 100."
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "upscale",
+                    "description": "Uses AI-based prediction to add fine detail while upscaling small images."
+                },
+                {
+                    "command": "vignette",
+                    "description": "Applies a vignette effect to an image.",
+                    "details": [
+                        {
+                            "detail": ":<level>",
+                            "description": "The strength level of the vignette.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "0",
+                                "max": "100",
+                                "default": "20",
+                                "description": "Range: 0 to 100. Default: 20."
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "quality": {
+            "prefix": "q",
+            "type": "radio",
+            "commands": [
+                {
+                    "command": "auto",
+                    "value": "auto",
+                    "description": "Delivers an image with an automatically determined level of quality.  By default, this is the same as q_auto:good.",
+                    "details": [
+                        {
+                            "detail": ":<quality_type>",
+                            "description": "The optimal balance between file size and visual quality. By default, this is the same as q_auto:good, while it can automatically switch to the more aggressive q_auto:eco mode (see the note on Save-data support below).",
+                            "list_value": [
+                                {
+                                    "value": "best",
+                                    "description": "Less aggressive algorithm. Generates bigger files with potentially better visual quality."
+                                },
+                                {
+                                    "value": "good",
+                                    "description": "Ensuring a relatively small file size with good visual quality."
+                                },
+                                {
+                                    "value": "eco",
+                                    "description": "More aggressive algorithm, which results in smaller files of slightly lower visual quality."
+                                },
+                                {
+                                    "value": "low",
+                                    "description": "Most aggressive algorithm, which results in the smallest files of low visual quality."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "command": "<quality_level>",
+                    "value": "<quality_level>",
+                    "description": "Sets the quality to the specified level.",
+                    "details": [
+                        {
+                            "value": "<quality_level>",
+                            "required": "true",
+                            "description": "The level of quality. Range: 1 to 100.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "1",
+                                "max": "100",
+                                "description": "The level of quality. Range: 1 to 100."
+                            }
+                        },
+                        {
+                            "detail": ":<chroma>",
+                            "description": "The chroma subsampling setting.",
+                            "list_value": [
+                                {
+                                    "value": "420",
+                                    "description": "forces subsampling."
+                                },
+                                {
+                                    "value": "444",
+                                    "description": "prevents subsampling."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "angle": {
+            "prefix": "a",
+            "type": "radio",
+            "commands": [
+                {
+                    "command": "degrees",
+                    "value": "<degrees>",
+                    "description": "Rotates or flips an asset by the specified number of degrees or automatically according to its orientation or available metadata.",
+                    "details": [
+                        {
+                            "value": "<degrees>",
+                            "required": "true",
+                            "description": "Rotates or flips an asset by the specified number of degrees.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-180",
+                                "max": "180",
+                                "default": "0"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "command": "<mode>",
+                    "value": "<mode>",
+                    "description": "Rotates an image based on the specified mode.",
+                    "details": [
+                        {
+                            "value": "<mode>",
+                            "required": "true",
+                            "description": "The rotation mode to apply.",
+                            "list_value": [
+                                {
+                                    "value": "vflip",
+                                    "description": " Vertically mirror flips the image."
+                                },
+                                {
+                                    "value": "hflip",
+                                    "description": "Horizontally mirror flips the image."
+                                },
+                                {
+                                    "value": "ignore",
+                                    "description": "Set the rotation to ignore if you do not want the image to be automatically rotated."
+                                }
+                            ]
+                        },
+                        {
+                            "detail": ".<degrees>",
+                            "description": "Rotates or flips an asset by the specified number of degrees.",
+                            "range_int": {
+                                "type": "int",
+                                "min": "-180",
+                                "max": "180"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+    }
+}

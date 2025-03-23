@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form method="post" id="photo-subscription" enctype="application/json" class="form-add  js-modal-submit" style="padding-top: 0;" autocomplete="off">
+    <h2>Add Photo</h2>
+    <br>
+    
+    <div class="">
+        <div class="form-group group-flex">
+            <label class="mb-1">
+                Choose Image File:
+                <input type="file" name="file" accept="image/*" id="id_photo_add" required>
+                <p id="err-avatar" style="color: red;" class="inp-error"> </p>
+            </label>
+        </div>
+    </div>
+
+    <div class="">
+        <div class="form-group">
+            <label style="width: 100%;"> Description:
+                <input type="text" name="photo_desc" id="id_photo_desc" style="width: inherit;" required>
+            </label>
+        </div>
+    </div>
+
+    <div class="">
+        <div class="form-group">
+            <label style="width: 100%;"> Enter Tags:
+                <input type="text" name="tag_str" id="id_tag_str" style="width: inherit;">
+            </label>
+        </div>
+    </div>
+
+    <div class="">
+        <div class="form-group">
+            <label style="width: 100%;"> and/or select Tags:
+                <select name="tags" multiple="multiple" style="width: inherit;">
+                    {% if tags %}
+                    <option value="">-- empty --</option>
+                    {% endif %}
+                    {% for tag in tags %}
+                    <option value="{{tag.name}}">{{tag.name}}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div class="grid">
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="reset" class="btn btn-primary secondary">Reset</button>
+    </div>
+</form>
+
+<script>
+    // async function check_redirect(urlRedirect) {
+    //     if (urlRedirect.indexOf("?") >= 0) {
+    //         let urlSplit = urlRedirect.split("?");
+    //         urlRedirect = urlSplit[0];
+    //         let spr = "?";
+    //         let urlQ = urlSplit[1];                 // Строка параметров
+    //         if (urlQ.indexOf("&") >= 0) {           // Несколько параметров
+    //             urlQuery = urlQ.split("&");             // Массив параметров
+    //             for (urlQ of urlQuery) {
+    //                 if (uQ1.indexOf("message=") == 0) {
+    //                     alert(decodeURI(uQ1.substr(8)));               // Выводим сообщение
+    //                 }
+    //                 else {
+    //                     urlRedirect = urlRedirect + spr + uQ1;  // Возвращаем параметр в URL
+    //                     spr = "&";
+    //                 }
+    //             }
+    //         }
+    //         else if (urlQ.indexOf("message=") == 0) {
+    //             alert(decodeURI(urlQ.substr(8)));                  // Выводим сообщение
+    //         }
+    //         else {
+    //             urlRedirect = urlRedirect + spr + urlQ;     // Возвращаем параметр в URL
+    //         }
+    //     }
+    //     return urlRedirect
+    // }
+
+    // async function errorsHandling(errors) {
+    //     for (const err of errors) {
+    //         let element = document.getElementById(err.key);
+    //         if (Boolean(element)) {
+    //             element.textContent = err.value;
+    //         }
+    //         else if (err.key == "message" || err.key == "error-msg") {
+    //             alert(`Error message: ${err.value}`);
+    //         }
+    //         else {
+    //             console.log(err)
+    //             alert(`Error response: ${err}`)
+    //         }
+    //     }
+    // }
+
+    async function handlePhotoFormSubmit(event) {
+        event.preventDefault();
+
+        let inp = document.getElementsByClassName('inp-error');
+        for (let i = 0; i < inp.length; i++) {
+            inp[i].textContent = "";
+        }
+
+        const form = event.currentTarget;
+        const url = String(form.baseURI) + "api/photos";
+        // console.log(url);
+
+        let desc = document.getElementById('id_photo_desc').value;
+        let tag = document.getElementById('id_tag_str').value;
+        let select = document.getElementsByTagName("option");
+
+        let tags = [];
+        for (let i = 0; i < select.length; i++) {
+            let sel = select.item(i);
+            if (sel.selected && sel.value.length > 0) {
+                tags[tags.length] = sel.value;
+            }
+        }
+        // console.log(tags);
+
+        let body = {"description": desc, "tag_str": tag, "tags": tags}
+        // console.log(body);
+        const bodyJsonString = JSON.stringify(body);
+        // console.log(bodyJsonString)
+
+        let responseData = undefined;
+        let isRedirect = false;
+        let urlRedirect = "";
+        let isReload = false;
+
+        try {
+            const formData = new FormData();
+            const files = document.querySelector('[type=file]').files;
+            formData.append('photo_file', files[0]);
+            formData.append('body', bodyJsonString);
+            // console.log(formData);
+            // alert("!!!!!");
+
+            const fetchOptions = {
+                method: "POST",
+                body: formData,
+            };
+
+            responseData = await fetch(url, fetchOptions);
+
+            // console.log(responseData.ok)
+            if (!responseData.ok) {
+                const errorMessage = await responseData.text();
+                throw new Error(errorMessage);
+            }
+
+            if (responseData.redirected) {
+                isRedirect = true;
+                // console.log(responseData.url)
+                urlRedirect = await check_redirect(responseData.url);
+                // console.log(urlRedirect)
+            }
+            else {
+                const responseJson = await responseData.json();
+                const succs = responseJson.detail.success;
+                const errs = responseJson.detail.errors;
+
+                if (Boolean(errs)) {
+                    await errorsHandling(errs);
+                }
+                else if (Boolean(succs)) {
+                    for (const suc of succs) {
+                        if (suc.key == "redirect") {
+                            isRedirect = true;
+                            urlRedirect = suc.value;
+                        } 
+                        else if (suc.key == "message") {
+                            alert(suc.value);
+                        }
+                        else if (suc.key == "reload") {
+                            document.forms["profile-form"]["file"].value = "";
+                            isReload = true;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(error);
+        }
+
+        if (isRedirect) {
+            if (Boolean(urlRedirect)) {
+                window.location.href = `${urlRedirect}`;
+            } else {
+                alert("Redirect.value is not URL");
+            }
+        }
+        else if (isReload) {
+            window.location.reload();
+        }
+    }
+
+    const photoForm = document.getElementById("photo-subscription");
+    photoForm.addEventListener("submit", handlePhotoFormSubmit);
+</script>
+
+{% endblock %}

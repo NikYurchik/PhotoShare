@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import and_
+from sqlalchemy import and_, desc
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
@@ -9,7 +9,7 @@ from src.schemas import CommentModel, CommentUpdate, CommentDelete
 from src.database.models import Comment, User, Photo, UserRole
 
 
-async def get_comments(photo_id: int, db: Session) -> List[Comment]:
+async def get_comments(page: int, per_page: int, photo_id: int, db: Session) -> List[Comment]:
     """
     Returns all comments associated with that photo.
 
@@ -20,9 +20,56 @@ async def get_comments(photo_id: int, db: Session) -> List[Comment]:
     Returns:
         List[Comment]: A list of comments for a given photo_id
     """
-    comments = db.query(Comment).filter(Comment.photo_id == photo_id).all()
+    if page and per_page:
+        offset = (page - 1) * per_page
+        comments = db.query(Comment.id,
+                            Comment.text,
+                            Comment.user_id,
+                            User.username
+                            ) \
+                    .select_from(Comment) \
+                    .join(User) \
+                    .filter(Comment.photo_id == photo_id) \
+                    .order_by(desc(Comment.id)) \
+                    .offset(offset).limit(per_page).all()
+    else:
+        comments = db.query(Comment.id,
+                            Comment.text,
+                            Comment.user_id,
+                            User.username
+                            ) \
+                    .select_from(Comment) \
+                    .join(User) \
+                    .filter(Comment.photo_id == photo_id) \
+                    .order_by(desc(Comment.id)) \
+                    .all()
 
     return comments  # noqa
+
+
+async def get_comment_by_id(photo_id: int, comment_id: int, db: Session) -> Comment:
+    """
+    Returns all comments associated with that photo.
+
+    Args:
+        photo_id (int): The id of the desired photo.
+        db (Session): The database session.
+
+    Returns:
+        List[Comment]: A list of comments for a given photo_id
+    """
+    comment = db.query(Comment.id,
+                       Comment.text,
+                       Comment.user_id,
+                       User.username
+                       ) \
+                .select_from(Comment) \
+                .join(User) \
+                .filter(Comment.photo_id == photo_id) \
+                .order_by(desc(Comment.id)) \
+                .first()
+
+    return comment  # noqa
 
 
 async def create_comment(photo_id: int, body: CommentModel, user: User, db: Session) -> Comment:
@@ -51,8 +98,9 @@ async def create_comment(photo_id: int, body: CommentModel, user: User, db: Sess
     db.add(comment)
     db.commit()
     db.refresh(comment)
+    return await get_comment_by_id(photo_id=photo_id, comment_id=comment.id, db=db)
 
-    return comment
+    # return comment
 
 
 async def update_comment(photo_id: int, comment_id: int, body: CommentModel, user: User, db: Session) -> Comment | None:
@@ -78,7 +126,8 @@ async def update_comment(photo_id: int, comment_id: int, body: CommentModel, use
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND)
 
-    return comment
+    return await get_comment_by_id(photo_id=photo_id, comment_id=comment_id, db=db)
+    # return comment
 
 
 async def delete_comment(photo_id: int, comment_id: int, user: User, db: Session) -> Comment | None:

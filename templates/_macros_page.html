@@ -1,0 +1,61 @@
+{% macro pagination_widget(pages, endpoint) %}
+{% set ps = namespace(found=false) %}
+<nav aria-label="Page navigation" style="font-size: initial;">
+    <div class="page-flex">
+        <ul class="pagination page-margin" id="page_items">
+            {% for p in pages %}
+            {% if loop.index0 == 0 %}
+                {% set ps.per_page = p['per_page'] %}
+                {% set ps.first_row = p['first_row'] %}
+                {% set ps.last_row = p['last_row'] %}
+                {% set ps.total_rows = p['total_rows'] %}
+            {% else %}
+            <li class="page-item {{p['class']}}">
+                <a href="{{endpoint}}?page={{p['href']}}&per_page={{ps.per_page}}"
+                    class="page-link"
+                    aria-label={{p['page']}}>
+                    <span aria-hidden="true">{{p['page_label'] | safe}}</span>
+                    <span class="sr-only">{{p['page_label'] | safe}}</span>
+                </a>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+        <p class="page-margin"> </p>
+        <select class="per-page page-margin" name="Per Page" value="{{ps.per_page}}" id="per_page" onchange="fnChangePerPage('per_page', 'page_items')">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="40">40</option>
+            <option value="50">50</option>
+        </select>
+
+        <p class="page-margin">items per page</p>
+    </div>
+
+    <p>
+        <span style="font-weight: bold; font-size: 125%;">{{ps.first_row}}-{{ps.last_row}}</span> items in total <span style="font-weight: bold; font-size: 125%;">{{ps.total_rows}}</span>
+    </p>
+</nav>
+
+<script>
+    function fnChangePerPage(id, id2) {
+        const sel = document.getElementById(id);
+        const per_page = sel.value;
+        const ul = document.getElementById(id2);
+        const alink = ul.getElementsByTagName('a');
+        let pg = `page=1`;
+        let pp = `per_page=${per_page}`;
+        for (let i = 0; i < alink.length; i++) {
+            let elem = alink[i];
+            let link = elem.getAttribute('href');
+            link = addParamToURL(link, pp)
+            elem.setAttribute('href', link);
+        }
+        let link = addParamToURL(document.URL, pg, pp);
+        window.location.href = link;
+    }
+    const sel = document.getElementById('per_page');
+    sel.value = '{{ps.per_page}}';
+</script>
+{% endmacro %}

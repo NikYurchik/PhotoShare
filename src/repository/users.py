@@ -3,33 +3,51 @@ from typing import List
 
 from libgravatar import Gravatar
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.db import DBSession
 from src.database.models import User, UserRole, Photo
 from src.schemas import UserModel, UserDbResponse, UserDbAdmin
+from src.services.pager import Pagination
 
 
-async def get_users(limit: int, offset: int, session: Session) -> List[UserDbAdmin]:
-    res = session.query(User.id, 
-                        User.username,
-                        User.email,
-                        User.created_at,
-                        User.avatar,
-                        User.roles,
-                        User.confirmed,
-                        User.is_banned,
-                        func.count(Photo.user_id).label('photo_count')) \
-                .select_from(User) \
-                .join(Photo, isouter=True) \
-                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) \
-                .limit(limit).offset(offset).all()
-    return res
+async def get_users(per_page: int, page: int, session: Session) -> List[UserDbAdmin]:
+    # res = session.query(User.id, 
+    #                     User.username,
+    #                     User.email,
+    #                     User.created_at,
+    #                     User.avatar,
+    #                     User.roles,
+    #                     User.confirmed,
+    #                     User.is_banned,
+    #                     func.count(Photo.user_id).label('photo_count')) \
+    #             .select_from(User) \
+    #             .join(Photo, isouter=True) \
+    #             .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) \
+    #             .limit(limit).offset(offset).all()
+    sel = select(User.id, 
+                    User.username,
+                    User.email,
+                    User.created_at,
+                    User.avatar,
+                    User.roles,
+                    User.confirmed,
+                    User.is_banned,
+                    func.count(Photo.user_id).label('photo_count')) \
+            .select_from(User) \
+            .join(Photo, isouter=True) \
+            .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) 
+    # print('>>> get_users(select): ', sel)
+    paginate = Pagination(sel, session, page, per_page)
+    res, pages = paginate.get_page()
+    # res = session.execute(sel).all()
+    # print('>>> get_users(result): ', res)
+    return res, pages
 
 
-async def get_users_by_mask(limit: int, offset: int, search_mask:str, session: Session) -> List[UserDbAdmin]:
-    res = session.query(User.id, 
+async def get_users_by_mask(per_page: int, page: int, search_mask:str, session: Session) -> List[UserDbAdmin]:
+    sel_users = select( User.id, 
                         User.username,
                         User.email,
                         User.created_at,
@@ -41,9 +59,10 @@ async def get_users_by_mask(limit: int, offset: int, search_mask:str, session: S
                 .select_from(User) \
                 .join(Photo, isouter=True) \
                 .filter(or_(User.username.like(search_mask), User.email.like(search_mask)))\
-                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned) \
-                .limit(limit).offset(offset).all()
-    return res
+                .group_by(User.id, User.username, User.email, User.created_at, User.avatar, User.roles, User.confirmed, User.is_banned)
+    paginate = Pagination(sel_users, session, page, per_page)
+    res, pages = paginate.get_page()
+    return res, pages
 
 
 async def toggle_banned_user(user_id: int, db: Session) -> UserDbAdmin:
@@ -63,14 +82,14 @@ async def set_roles_user(user_id: int, role: UserRole, db: Session) -> UserDbAdm
 
 
 async def get_user_by_id(user_id: int, session: Session) -> UserDbAdmin:
-    res = session.query(User.id, 
-                        User.username,
-                        User.email,
-                        User.created_at,
-                        User.avatar,
-                        User.roles,
-                        User.confirmed,
-                        User.is_banned,
+    res = session.query(User.id.label('id'), 
+                        User.username.label('username'),
+                        User.email.label('email'),
+                        User.created_at.label('created_at'),
+                        User.avatar.label('avatar'),
+                        User.roles.label('roles'),
+                        User.confirmed.label('confirmed'),
+                        User.is_banned.label('is_banned'),
                         func.count(Photo.user_id).label('photo_count')) \
                 .select_from(User) \
                 .join(Photo, isouter=True) \
@@ -89,8 +108,24 @@ async def get_user_by_email(email: str, db: Session) -> User:
     :return: The user object
     :doc-author: Python-WEB13-project-team-2
     """
-    # print(f"get_user_by_email: {email}")
-    return db.query(User).filter(User.email == email).first()
+    # print(f">>> get_user_by_email: {email}")
+    res = db.query(User).filter(User.email == email).first()
+    # res = db.query(User.id.label('id'), 
+    #                 User.username.label('username'),
+    #                 User.email.label('email'),
+    #                 User.password.label('password'),
+    #                 User.refresh_token.label('refresh_token'),
+    #                 User.created_at.label('created_at'),
+    #                 User.avatar.label('avatar'),
+    #                 User.roles.label('roles'),
+    #                 User.confirmed.label('confirmed'),
+    #                 User.is_banned.label('is_banned')) \
+    #         .select_from(User) \
+    #         .join(Photo, isouter=True) \
+    #         .filter(User.email == email) \
+    #         .first()
+    # print(f">>> get_user_by_email: id={res.id}")
+    return res
 
 
 async def create_user(body: UserModel, db: Session) -> User:
