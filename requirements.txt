@@ -17,3 +17,7 @@ alembic
 uvicorn
 qrcode
 aiofiles
+fastapi-pagination
+mkdocs
+discover
+requests
