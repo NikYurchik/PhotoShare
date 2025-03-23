@@ -7,17 +7,20 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 # import redis
 
-
+from src.base import app
 from src.database.db import get_db
 from src.repository import users as repository_users
 from src.conf.config import settings
 from src.conf import messages
+from src.services.utils import OAuth2PasswordBearerWithCookie
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+    # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+    oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/auth/login")
 
     SECRET_KEY = settings.secret_key
     ALGORITHM = settings.algorithm
@@ -64,7 +67,7 @@ class Auth:
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.utcnow() + timedelta(minutes=15)
+            expire = datetime.utcnow() + timedelta(minutes=30)
         to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "access_token"})
         encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_access_token
@@ -114,6 +117,7 @@ class Auth:
             print(err)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.COULD_NOT_VALIDATE_CREDENTIALS)
 
+    # async def get_current_user(self, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     async def get_current_user(self, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
         """
         The get_current_user function is a dependency that will be used in the UserController class.
@@ -136,26 +140,32 @@ class Auth:
         try:
             # Decode JWT
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            # print(f">>> get_current_user: payload={payload}")
             if payload['scope'] == 'access_token':
                 email = payload["sub"]
+                # print(f">>> get_current_user: email={email}")
                 if email is None:
+                    # print(">>> get_current_user: email is None")
+                    app.extra["user"].update({"is_authenticated": False})
                     raise credentials_exception
             else:
+                # print(">>> get_current_user: payload['scope'] != 'access_token'")
+                app.extra["user"].update({"is_authenticated": False})
                 raise credentials_exception
         except JWTError as e:
+            # print(f">>> get_current_user: except JWTError \"{e}\"")
+            app.extra["user"].update({"is_authenticated": False})
             raise credentials_exception
 
-        # user = self.r.get(f"user:{email}")
-        # if user is None:
-        #     user = await repository_users.get_user_by_email(email, db)
-        #     if user is None:
-        #         raise credentials_exception
-        #     self.r.set(f"user:{email}", pickle.dumps(user))
-        #     self.r.expire(f"user:{email}", 900)
-        # else:
-        #     user = pickle.loads(user)
-        user = await repository_users.get_user_by_email(email, db)
+        try:
+            user = await repository_users.get_user_by_email(email, db)
+        except SQLAlchemyError as err:
+            app.extra["user"].update({"is_authenticated": False})
+            raise credentials_exception
+
         if user is None:
+            # print(">>> get_current_user: user is None")
+            app.extra["user"].update({"is_authenticated": False})
             raise credentials_exception
         return user
 

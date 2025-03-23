@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<script>
+    async function loadImage() {
+        const img = document.getElementById("photo-url");
+        if (img.naturalWidth < img.clientWidth) {
+            img.width = img.naturalWidth;
+        } else {
+            img.width = img.parentNode.clientWidth;
+        }
+        const osize = document.getElementById("photo-size");
+        osize.textContent = "Original sizes:" + img.naturalWidth + " x " + img.naturalHeight;
+    }
+
+    async function clickOrigPhoto(photo_id) {
+        let urlRedirect = `${document.baseURI}api/photos/${photo_id}`;
+        window.location.href = `${urlRedirect}`;
+    }
+</script>
+
+<div class="author-details">
+    <div class="photo-title">
+        <div style="display: flex;">
+            {% if transform.qr_url %}
+            <img src="{{transform.qr_url}}" alt="QR code" height="80" style="display: block;" id="qr-url">
+            {% else %}
+            <img src="" alt="QR code" height="80" style="display: none;" id="qr-url">
+            {% endif %}
+    
+            <h3 class="author-title" id="photo-desc">{{photo.description}}</h3>
+        </div>
+
+    </div>
+
+    <div class="photo-title">
+        <p id="photo-size"></p>
+        <p id="trans-params"></p>
+        <p>Owner: {{photo.username}}</p>
+    </div>
+
+    <div class="img-box" id="img-box">
+        <div class="img-div" style="width: 75%;">
+            {% if transform.file_url %}
+            <img src="{{transform.file_url}}" alt="{{photo.description}}" width="100%" name="{{transform.id}}" id="photo-url" onload="loadImage()">
+            {% else %}
+            <img src="{{photo.file_url}}" alt="{{photo.description}}" width="100%" id="photo-url" onload="loadImage()">
+            {% endif %}
+        </div>
+
+        <div class="transfom-photo" style="width: 25%;" id="transfom-photo">
+            <p>Original</p>
+            <img src="{{photo.file_url}}" alt="{{photo.description}}" width="50%" id="orig-img" onclick="clickOrigPhoto('{{photo.id}}')">
+            <p>Trasformations</p>
+
+            <form method="post" id="photo-transfom" enctype="application/json" class="form-trans" autocomplete="off">
+                <div role="group" class="group-trans">
+                    <ul class="qualifier-options" id="qualifiers">
+                    </ul>
+
+                    <div class="group-inp">
+                        <button type="submit" class="btn btn-primary">{% if transform.file_url %}Update{% else %}Create{% endif %}</button>
+                        <button type="reset" class="btn btn-primary secondary" id="form-btn-reset">Reset</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- <script type="module" src="/cloud.js"> -->
+<!-- <script type="text/javascript" src="cloud.js"> -->
+<!-- // <script type="module" >
+// <script  type="text/javascript" >
+    // Import the Cloudinary class.
+    // console.log('Import the Cloudinary class.')
+    // import Cloudinary from "/node_modules/@cloudinary/url-gen";
+    // console.log('import Ok')
+    // // Create a Cloudinary instance and set your cloud name.
+    // export const cld = new Cloudinary({
+    //   cloud: {
+    //     cloudName: 'dqglsxwms'
+    //   }
+    // });
+    // console.log(cld) -->
+<!-- </script> -->
+
+<script src="/js/transform3.js"></script>
+
+<script>
+    let qualifiers = '{{qualifiers}}';
+    qualifiers = qualifiers.replaceAll('&#39;', '"').replaceAll('&#34;', "'").replaceAll('&lt;', "<").replaceAll('&gt;', ">").replaceAll('#34;', "'");
+    qualifiers = JSON.parse(qualifiers);
+    
+    let trans_data = '{{transform.params}}'.replaceAll('&#34;', '"').replaceAll('&#39;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>');
+    trans_data = (Boolean(trans_data)) ? JSON.parse(trans_data) : {};
+    console.log(trans_data);
+
+    const photoTrans = new photoTransform(qualifiers, trans_data, 'qualifiers');
+    photoTrans.setupTransData();
+
+    function setHover(id) {
+        photoTrans.setHover(id);
+    }
+
+    function offHover(id) {
+        photoTrans.offHover(id);
+    }
+
+    function fnRadioChange2(id, id2, ids_hidden) {
+        photoTrans.fnRadioChange2(id, id2, ids_hidden);
+    }
+
+    function fnCommandChange(qual_name, id_value, id_div, id_det) {
+        photoTrans.fnCommandChange(qual_name, id_value, id_div, id_det);
+    }
+
+    function fnCheckChange(id, id_div) {
+        photoTrans.fnCheckChange(id, id_div);
+
+    }
+
+    async function photoTransfomSubmit(event) {
+        await photoTrans.photoTransfomSubmit(event, photoTrans);
+    }
+
+    async function photoTransfomReset(event) {
+        await photoTrans.photoTransfomReset(event, photoTrans);
+    }
+
+    const photoForm = document.getElementById("photo-transfom");
+    photoForm.addEventListener("submit", photoTransfomSubmit);
+    const formBtnReset = document.getElementById("form-btn-reset");
+    formBtnReset.addEventListener("click", photoTransfomReset);
+
+</script>
+
+{% endblock %}

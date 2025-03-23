@@ -27,6 +27,7 @@ discover = "^0.4.0"
 alembic = "^1.12.0"
 qrcode = "^7.4.2"
 aiofiles = "^23.2.1"
+fastapi-pagination = "^0.12.14"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"

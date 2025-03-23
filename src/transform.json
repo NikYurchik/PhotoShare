@@ -1,0 +1,178 @@
+{
+    "qualifiers": {
+
+        "crop": {
+            "commands": [
+                {
+                    "command": "c_crop",
+                    "description": "Extracts the specified size from the original image without distorting or scaling the delivered asset."
+                },
+                {
+                    "command": "c_fill",
+                    "description": "Creates an asset with the exact specified width and height without distorting the asset."
+                },
+                {
+                    "command": "c_fill_pad",
+                    "description": "Tries to prevent a \"bad crop\" by first attempting to use the fill mode, but adding some padding if the algorithm determines that more of the original image needs to be included in the final image."
+                },
+                {
+                    "command": "c_fit",
+                    "description": "Scales the asset up or down so that it takes up as much space as possible within a bounding box defined by the specified dimension parameters without cropping any of it."
+                },
+                {
+                    "command": "c_lfill",
+                    "description": "The lfill (limit fill) mode is the same as fill but only if the original image is larger than the specified resolution limits."
+                },
+                {
+                    "command": "c_limit",
+                    "description": "Same as the fit mode but only if the original asset is larger than the specified limit (width and height), in which case the asset is scaled down so that it takes up as much space as possible within a bounding box defined by the specified width and height parameters."
+                },
+                {
+                    "command": "c_lpad",
+                    "description": "The lpad (limit pad) mode is the same as pad but only if the original asset is larger than the specified limit (width and height), in which case the asset is scaled down to fill the specified width and height while retaining the original aspect ratio (by default) and with all of the original asset visible."
+                },
+                {
+                    "command": "c_mfit",
+                    "description": "The mfit (minimum fit) mode is the same as fit but only if the original image is smaller than the specified minimum (width and height), in which case the image is scaled up so that it takes up as much space as possible within a bounding box defined by the specified width and height parameters."
+                },
+                {
+                    "command": "c_mpad",
+                    "description": "The mpad (minimum pad) mode is the same as pad but only if the original image is smaller than the specified minimum (width and height), in which case the image is unchanged but padding is added to fill the specified dimensions."
+                },
+                {
+                    "command": "c_pad",
+                    "description": "Resizes the asset to fill the specified width and height while retaining the original aspect ratio (by default) and with all of the original asset visible."
+                },
+                {
+                    "command": "c_scale",
+                    "description": "Resizes the asset exactly to the specified width and height. All original asset parts are visible, but might be stretched or shrunk if the dimensions you request have a different aspect ratio than the original. If only width or only height is specified, then the asset is scaled to the new dimension while retaining the original aspect ratio."
+                },
+                {
+                    "command": "c_thumb",
+                    "description": "Creates image thumbnails from either face-detection or custom coordinates. Must always be accompanied by the g (gravity) parameter set to one of the face detection or one of the g_custom values."
+                }
+
+            ]
+        },
+
+        "radius": {
+            "commands": [
+                {
+                    "command": "r_<pixel_value>",
+                    "description": "Rounds all four corners of an asset by the same pixel radius. The radius value to apply to all four corners of the asset.",
+                    "range_int": {
+                        "type": "int",
+                        "min": "1",
+                        "max": "4608",
+                        "description": "An integer value to set the height to the given number in pixels (e.g., 150 sets the height to exactly 150 pixels)."
+                    }
+                }
+            ]
+
+        }
+    }
+},
+{
+    "radio": [
+        {
+            "value": "max",
+            "description": "Delivers the asset as a rounded circle or oval shape. If the input asset is a 1:1 aspect ratio, it will be a circle. If rectangular, it will be an oval."
+        },
+        {
+            "detail": "<pixel_value>",
+            "value": "",
+            "description": "Rounds all four corners of an asset by the same pixel radius. The radius value to apply to all four corners of the asset.",
+            "details": [
+                {
+                    "detail": ":<value1>",
+                    "description": "#34;value1#34; controls the pixel radius of the top-left and bottom-right corners.",
+                    "range_int": {
+                        "type": "int",
+                        "min": "0",
+                        "max": "1024",
+                        "description": "#34;value2#34; controls the pixel radius of the top-right and bottom-left corners."
+                    }
+                },
+                {
+                    "detail": ":<value2>",
+                    "description": "#34;value1#34; controls the pixel radius of the top-left and bottom-right corners.",
+                    "range_int": {
+                        "type": "int",
+                        "min": "0",
+                        "max": "1024",
+                        "description": "#34;value2#34; controls the pixel radius of the top-right and bottom-left corners."
+                    }
+                },
+                {
+                    "detail": ":<value3>",
+                    "description": "#34;value1#34; controls the pixel radius of the top-left corner. #34;value2#34; controls the pixel radius of the top-right and bottom-left corners.",
+                    "range_int": {
+                        "type": "int",
+                        "min": "0",
+                        "max": "1024",
+                        "description": "#34;value3#34; controls the pixel radius of the bottom-right corner."
+                    }
+                },
+                {
+                    "detail": ":<value4>",
+                    "description": "The pixel radius of each corner is defined separately, where the values represent the corners in clockwise order, starting with the top-left.",
+                    "range_int": {
+                        "type": "int",
+                        "min": "0",
+                        "max": "1024"
+                    }
+                }
+            ]
+
+        }
+    ]
+},
+{
+    "command": "max",
+    "description": "Delivers the asset as a rounded circle or oval shape. If the input asset is a 1:1 aspect ratio, it will be a circle. If rectangular, it will be an oval."
+},
+{
+    "command": "<pixel_value>",
+    "description": "Rounds selected corners of an image, based on the number of values specified, similar to the border-radius CSS property.",
+    "details": [
+        {
+            "detail": ":<value1>",
+            "description": "Rounds all four corners of an asset by the same pixel radius. The radius value to apply to all four corners of the asset.",
+            "range_int": {
+                "type": "int",
+                "min": "0",
+                "max": "1024",
+                "description": "#34;value2#34; controls the pixel radius of the top-right and bottom-left corners."
+            }
+        },
+        {
+            "detail": ":<value2>",
+            "description": "#34;value1#34; controls the pixel radius of the top-left and bottom-right corners.",
+            "range_int": {
+                "type": "int",
+                "min": "0",
+                "max": "1024",
+                "description": "#34;value2#34; controls the pixel radius of the top-right and bottom-left corners."
+            }
+        },
+        {
+            "detail": ":<value3>",
+            "description": "#34;value1#34; controls the pixel radius of the top-left corner. #34;value2#34; controls the pixel radius of the top-right and bottom-left corners.",
+            "range_int": {
+                "type": "int",
+                "min": "0",
+                "max": "1024",
+                "description": "#34;value3#34; controls the pixel radius of the bottom-right corner."
+            }
+        },
+        {
+            "detail": ":<value4>",
+            "description": "The pixel radius of each corner is defined separately, where the values represent the corners in clockwise order, starting with the top-left.",
+            "range_int": {
+                "type": "int",
+                "min": "0",
+                "max": "1024"
+            }
+        }
+    ]
+}

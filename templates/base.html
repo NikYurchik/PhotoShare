@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!-- <script type="module" src="/node_modules/@cloudinary/url-gen"></script> -->
+<!-- <script src="/node_modules/@cloudinary/url-gen/instance/Cloudinary.js"></script> -->
+<!-- <script type="module" src="/main.js"></script> -->
+<!-- <script type="text/javascript" src="/main.js"></script> -->
+<!-- <script type="text/javascript"> -->
+<!-- <script type="module">
+// Import the Cloudinary class.
+import {Cloudinary} from "/node_modules/@cloudinary/url-gen/instance/Cloudinary.js"; 
+
+// Create a Cloudinary instance and set your cloud name.
+export const cld = new Cloudinary({
+  cloud: {
+    cloudName: 'dqglsxwms'
+  }
+});
+</script> -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
+    <link href="https://quotes.toscrape.com/static/bootstrap.min.css" rel="stylesheet">
+
+    <link href="static/cover.css" rel="stylesheet" type="text/css">
+    <link href="static/styles2.css" rel="stylesheet" type="text/css">
+
+    <link rel="shortcut icon" href="https://fastapi.tiangolo.com/img/favicon.png">
+    <title>{{title}}</title>
+</head>
+<body>
+    <script src="/js/utils2.js"></script>
+
+    <div class="container">
+        <div class="row header-box pt-3 pb-5">
+            <div class="col-md-8">
+                <h1>
+                    <a href="/" style="text-decoration: none">{{title}}</a>
+                </h1>
+            </div>
+            <div class="col-md-4 login">
+                <p>
+                    {% if user.is_authenticated %}
+                    <span>Welcome <b>{{ user.username }}!</b></span>
+                    <a class="btn btn-primary" href="/api/myuser" role="button">Profile</a>
+                    <button type="button" class="btn btn-primary" id="btn-logout">Logout</button>
+                    {% else %}
+                    <a class="btn btn-primary" href="/api/auth/signup" role="button">Sign Up</a>
+                    <button type="button" class="btn btn-primary" data-modal-open>Login</button>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    
+        {% block content %} {% endblock %}
+
+    </div>
+
+    <div class="backdrop  is-hidden" data-modal>
+        <div class="modal">
+            <svg class="md-close" width="24" height="24" data-modal-close>
+                <use href="/images/social-icons.svg#icon-close"></use>
+            </svg>
+
+            <form method="post" id="login-subscription" enctype="application/json" class="form  js-modal-submit"  autocomplete="off">
+                <h2>Login</h2>
+                <div>
+                    <label class="sign-label"> Email:
+                        <input type="email" required placeholder="Your email" name="username" value="{{email}}" class="form-control">
+                    </label>
+                    <p id="email" style="color: red;" class="inp-error"> </p>
+                </div>
+                <br>
+                <div>
+                    <label class="sign-label"> Password:
+                        <input type="password" required placeholder="Choose a secure password" value="{{password}}" name="password" class="form-control">
+                    </label>
+                    <p id="password" style="color: red;" class="inp-error"> </p>
+                </div>
+            
+                <div class="grid center">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="reset" class="btn btn-primary secondary">Reset</button>
+                </div>
+                <br>
+                <div class="small text-center">
+                    <a href="" class="text-center"><i>Forgot Password?</i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- <script src="/js/modal2.js"></script> -->
+    <script src="/js/login.js"></script>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="copyright">
+                Made with <span class="zyte">❤</span> by NikYurchik
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

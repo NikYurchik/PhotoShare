@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, func, desc
 from sqlalchemy.orm import Session
 
 from src.database.models import Tag, tag_photo_association as t2p
@@ -81,3 +81,23 @@ class TagRepository:
 
         return diff_list, tags_list
 
+
+    async def get_tags_all(self, session: Session) -> List[Tag]:
+        # tquery = select(Tag)
+        # tags = session.execute(tquery).scalars().all()
+        tags = session.query(Tag) \
+                      .order_by(Tag.name) \
+                      .all()
+        return tags 
+
+
+    async def get_tags_max10(self, session: Session) -> List[Tag]:
+        tags = session.query(Tag.id,
+                             Tag.name,
+                             func.count(Tag.id).label('tag_count')) \
+                        .select_from(Tag) \
+                        .join(t2p) \
+                        .group_by(Tag.id, Tag.name) \
+                        .order_by(desc("tag_count")) \
+                        .limit(10).all()
+        return tags 

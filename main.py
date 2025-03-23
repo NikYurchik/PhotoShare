@@ -1,78 +1,43 @@
 import re
-# import ipaddress
 from typing import Callable
 import pathlib
+import logging
 
-# import redis.asyncio as redis
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Query
 from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-# from fastapi_limiter import FastAPILimiter
-# from fastapi_limiter.depends import RateLimiter
-from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.log import rootlogger
 
 from src.database.db import get_db
-from src.routes import auth, users, myuser, photos, comments
-# from src.conf.config import settings, BASE_DIR
+from src.routes import auth, users, myuser, photos
 from src.conf.config import BASE_DIR
 from src.conf import messages
 from src.services.custom_limiter import RateLimiter
-
-app = FastAPI()
-
-
-# @app.on_event("startup")
-# async def startup():
-#     """
-#     The startup function is called when the application starts up.
-#         It's a good place to initialize things that are needed by your app, like database connections or caches.
-    
-#     :return: A redis connection pool
-#     """
-#     # await check_user_admin()
-#     r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, password=settings.redis_password, db=0)
-#     await FastAPILimiter.init(r)
+from src.services.custom_json import Jsons
+from src.base import app, templates, user_agent_ban_list
+from src.repository.tags import TagRepository
 
 
-origins = [ 
-    "http://localhost:8000/",
-    "http://127.0.0.1:8000/",
-    "http://0.0.0.0:8000/"
-    ]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+logging.disable(logging.WARNING)
+# logging.disable(logging.INFO)
+# rootlogger.setLevel(logging.ERROR)
+# logging.logProcesses = False
 
 app.include_router(auth.router, prefix='/api/auth')
 app.include_router(users.router, prefix='/api/users')
 app.include_router(photos.router, prefix='/api/photos')
 app.include_router(myuser.router, prefix='/api/myuser')
-# app.include_router(comments.router, prefix='/api/comments')
 
-templates = Jinja2Templates(directory='templates')
+
 BASE_DIR = pathlib.Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.mount("/htmlcov", StaticFiles(directory=BASE_DIR / "htmlcov"), name="htmlcov")
-
-
-# ALLOWED_IPS = [
-#     ipaddress.ip_address('0.0.0.0'),
-#     ipaddress.ip_address("127.0.0.1"),
-#     ipaddress.ip_address("108.63.249.204")
-#     ]
-
-user_agent_ban_list = [r"Python-urllib"]
-# user_agent_ban_list = [r"Gecko", r"Python-urllib"]
+app.mount("/js", StaticFiles(directory=BASE_DIR / "js"), name="js")
+app.mount("/node_modules ", StaticFiles(directory=BASE_DIR / "node_modules "), name="node_modules ")
+app.mount("/images", StaticFiles(directory=BASE_DIR / "images"), name="images")
 
 
 # @app.middleware('http')
@@ -81,27 +46,6 @@ user_agent_ban_list = [r"Python-urllib"]
 #     base_url = request.base_url
 #     if base_url not in origins:
 #         return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.NOT_ALLOWED_BASE_URL})
-#     response = await call_next(request)
-#     return response
-
-
-# @app.middleware("http")
-# async def limit_access_by_ip(request: Request, call_next: Callable):
-#     """
-#     The limit_access_by_ip function is a middleware function that limits access to the API by IP address.
-#         It checks if the request's client host IP address is in ALLOWED_IPS, and if not, returns a 403 Forbidden response.
-    
-#     :param request: Request: Get the ip address of the client that is making a request
-#     :param call_next: Callable: Call the next function in the pipeline
-#     :return: A jsonresponse object, which contains the http status code and a message
-    # :doc-author: Python-WEB13-project-team-2
-#     """
-#     try:
-#         ip = ipaddress.ip_address(request.client.host)
-#         if ip not in ALLOWED_IPS:
-#             return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": messages.NOT_ALLOWED_IP_ADDRESS})
-#     except Exception as err:
-#         print(f"ip_address error: {err}")
 #     response = await call_next(request)
 #     return response
 
@@ -128,7 +72,14 @@ async def user_agent_ban_middleware(request: Request, call_next: Callable):
 
 
 @app.get("/", response_class=HTMLResponse, description="Main Page", dependencies=[Depends(RateLimiter(times=10, seconds=60))])
-async def root(request: Request):
+async def root( request: Request,
+                page: int = Query(None, gt=0, description="Page number"),
+                per_page: int = Query(None, ge=10, le=50, description="Items per page"),
+                user_id: int = Query(None, description="Filter by user"),
+                keyword: str = Query(None, description="Keyword to search in photo descriptions"),
+                tag: str = Query(None, description="Filter photos by tag"),
+                order_by: str = Query("newest", description="Sort order date('newest' or 'oldest'"),
+                db: Session = Depends(get_db)):
     """
     The root function is the entry point for the application.
         - It returns a TemplateResponse object, which renders an HTML template using Jinja2.
@@ -138,7 +89,26 @@ async def root(request: Request):
     :return: A templateresponse object, which is a subclass of response
     :doc-author: Python-WEB13-project-team-2
     """
-    return templates.TemplateResponse('index.html', {"request": request, "title": messages.CONTACTS_APP})
+    # print(f"app.extra: {app.extra}")
+    images, pages = await photos.get_and_search_photos(request=request, db=db, page=page, per_page=per_page, user_id=user_id, keyword=keyword, tag=tag, order_by=order_by)
+
+    top_tags = await TagRepository().get_tags_max10(session=db)
+    top = []
+    size = 28
+    for tag_ in top_tags:
+        # print(f'name: {tag.name}, count: {tag.tag_count}, tag_size: {size}')
+        top.append({'tag_name': tag_.name, 'tag_size': f"{size}px"})
+        size -= 2
+        if len(top) >= 10:
+            break
+
+    return templates.TemplateResponse('index.html', {"request": request,
+                                                     "title": messages.CONTACTS_APP, 
+                                                     "user": app.extra["user"],
+                                                     "view_tag": tag,
+                                                     "top_tags": top,
+                                                     "pages": pages,
+                                                     "photos": Jsons.list_photoresponse_to_json(images)})
 
 
 @app.get("/api/healthchecker")

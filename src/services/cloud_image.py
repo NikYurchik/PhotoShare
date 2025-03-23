@@ -55,17 +55,38 @@ class CloudImage:
     @staticmethod
     def upload_transform_image(body, photo_file_url) -> str:
 
+        def prepare_property(value):
+            prls = value.split('||')
+            return prls[len(prls)-1]
+        
         public_id = re.search(r"/v\d+/(.+)\.\w+$", photo_file_url).group(1)
+        trans_params = []
+        
+        trans = {}
+        if body.height:
+            trans.update({'height': prepare_property(body.height)})
+        if body.width:
+            trans.update({'width': prepare_property(body.width)})
+        if body.crop:
+            trans.update({'crop': prepare_property(body.crop)})
+        if body.gravity:
+            trans.update({'gravity': prepare_property(body.gravity)})
+        if trans:
+            trans_params.append(trans)
 
-        url_changed_photo = cloudinary.CloudinaryImage(f"{public_id}").build_url(transformation=[
-            {'gravity': body.gravity, 'height': body.height, 'width': body.width, 'crop': body.crop},
-            {'radius': body.radius},
-            {'effect': body.effect} if body.effect else None,
-            {'quality': body.quality},
-            {'fetch_format': body.fetch_format if body.fetch_format else re.search(r"\w+$", photo_file_url).group(
-                0)}
-        ])
+        if body.radius:
+            trans_params.append({'radius': prepare_property(body.radius)})
+        if body.effect:
+            trans_params.append({'effect': prepare_property(body.effect)})
+        if body.quality:
+            trans_params.append({'quality': prepare_property(body.quality)})
+        if body.fetch_format:
+            trans_params.append({'fetch_format': prepare_property(body.fetch_format)})
+        if body.angle:
+            trans_params.append({'angle': prepare_property(body.angle)})
+        print(f'>>> trans_params = {trans_params}')
 
+        url_changed_photo = cloudinary.CloudinaryImage(f"{public_id}").build_url(transformation=trans_params)
         return url_changed_photo
 
 

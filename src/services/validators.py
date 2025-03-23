@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import HTTPException, status
+import requests
 
 from src.conf import messages
 from src.conf.config import MAX_TAGS_COUNT
@@ -33,3 +34,18 @@ class Validator:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.MAXIMUM_TAGS_COUNT)
 
         return tags_list
+
+
+    async def check_transform_url(self, url) -> str:
+        result = ""
+        try:
+            req = requests.head(url, allow_redirects=True)
+            if req.status_code != 200:
+                result = req.headers.get('x-cld-error')
+        except HTTPException as err:
+            result = err.detail
+        except Exception as err:
+            result = err.args
+        return result
+
+

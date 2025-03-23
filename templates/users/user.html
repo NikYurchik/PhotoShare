@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="quote">
+    <h2>Profile page: {{user1.username}}</h2>
+    <div class="text">
+        <img src="{{user1.avatar}}" alt="Avatar {{user1.username}}"  height="200">
+        <div class="photo-info">
+            <p>Email: {{user1.email}}</p>
+            <p>Created at: {{user1.created_at}}</p>
+            <p>Roles: {{user1.roles}}</p>
+            <p>Confirmed: {{user1.confirmed}}</p>
+            <p>Is banned: {{user1.is_banned}}</p>
+            <p>Number of Photo: {{user1.photo_count}}</p>
+        </div>
+    </div>
+</div>
+
+{% if user1.id != user.id %}
+<form method="patch" id="profile-subscription" enctype="application/json" name="profile-form">
+    <div class="form-row">
+        <div class="">
+            <div  role="group" class="group">
+                <h4 class="group-title">Choose Role</h4>
+                <ul class="experience-options">
+                    {% for role in roles %}
+                    {% if user1.roles >= user.roles %}
+                    <li>
+                        <label class="radio-label">
+                            <input class="radio" type="radio" name="roles" value="{{role}}" {% if user1.roles == role %} checked {% endif %}>
+                            <span class="icon4">{{role}}</span>
+                        </label>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="grid">
+        <button type="submit" class="btn btn-primary">Change Role</button>
+        <button type="reset" class="btn btn-primary secondary">Reset</button>
+        <button type="button" class="btn btn-primary">Ban User</button>
+    </div>
+</form>
+{% endif %}
+
+<script>
+    async function handleProfileFormSubmit(event) {
+        event.preventDefault();
+
+        let inp = document.getElementsByClassName('inp-error');
+        for (let i = 0; i < inp.length; i++) {
+            inp[i].textContent = "";
+        }
+
+        const form = event.currentTarget;
+        const url = form.action;
+
+        let responseData = undefined;
+        let isRedirect = false;
+        let urlRedirect = "";
+        let isReload = false;
+
+        try {
+            const formData = new FormData()
+            const files = document.querySelector('[type=file]').files
+            formData.append('file', files[0])
+
+            const fetchOptions = {
+                method: "PATCH",
+                body: formData,
+            };
+
+            responseData = await fetch(url, fetchOptions);
+
+            if (!responseData.ok) {
+                const errorMessage = await responseData.text();
+                throw new Error(errorMessage);
+            }
+
+            if (responseData.redirected) {
+                isRedirect = true;
+                urlRedirect = responseData.url;
+                if (urlRedirect.indexOf("?") >= 0) {
+                    let urlSplit = urlRedirect.split("?");
+                    urlRedirect = urlSplit[0];
+                    let spr = "?";
+                    let urlQ = urlSplit[1];                 // Строка параметров
+                    if (urlQ.indexOf("&") >= 0) {           // Несколько параметров
+                        urlQuery = urlQ.split("&");             // Массив параметров
+                        for (urlQ of urlQuery) {
+                            if (uQ1.indexOf("message=") == 0) {
+                                alert(decodeURI(uQ1.substr(8)));               // Выводим сообщение
+                            }
+                            else {
+                                urlRedirect = urlRedirect + spr + uQ1;  // Возвращаем параметр в URL
+                                spr = "&";
+                            }
+                        }
+                    }
+                    else if (urlQ.indexOf("message=") == 0) {
+                        alert(decodeURI(urlQ.substr(8)));                  // Выводим сообщение
+                    }
+                    else {
+                        urlRedirect = urlRedirect + spr + urlQ;     // Возвращаем параметр в URL
+                    }
+                }
+            }
+
+            const responseJson = await responseData.json();
+            const succs = responseJson.detail.success;
+            const errs = responseJson.detail.errors;
+
+            if (Boolean(errs)) {
+                for (const err of errs) {
+                    let element = document.getElementById(err.key);
+                    element.textContent = err.value;
+                }
+            }
+            else if (Boolean(succs)) {
+                for (const suc of succs) {
+                    if (suc.key == "redirect") {
+                        isRedirect = true;
+                        urlRedirect = suc.value;
+                    } 
+                    else if (suc.key == "message") {
+                        alert(suc.value);
+                    }
+                    else if (suc.key == "reload") {
+                        document.forms["profile-form"]["file"].value = "";
+                        isReload = true;
+                        // window.location.reload();
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+
+        if (isRedirect) {
+            if (Boolean(urlRedirect)) {
+                responseData.redirected = true;
+                responseData.status = 302;
+                window.location.href = `${urlRedirect}`;
+            } else {
+                alert("Redirect.value is not URL");
+            }
+        }
+        else if (isReload) {
+            window.location.reload();
+        }
+    }
+
+    const profileForm = document.getElementById("profile-subscription");
+    profileForm.addEventListener("submit", handleProfileFormSubmit);
+</script>
+    
+{% endblock content %}
+
+<!-- id	1
+username	"admin"
+email	"admin@email.com"
+created_at	null
+avatar	"https://res.cloudinary.com/dqglsxwms/image/upload/v1698108985/avatar/admin/x40g5pbyqd2yxttwethd.jpg"
+roles	"admin"
+is_authenticated	false
+photo_count	4 -->
