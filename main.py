@@ -36,7 +36,7 @@ BASE_DIR = pathlib.Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.mount("/htmlcov", StaticFiles(directory=BASE_DIR / "htmlcov"), name="htmlcov")
 app.mount("/js", StaticFiles(directory=BASE_DIR / "js"), name="js")
-app.mount("/node_modules ", StaticFiles(directory=BASE_DIR / "node_modules "), name="node_modules ")
+# app.mount("/node_modules ", StaticFiles(directory=BASE_DIR / "node_modules "), name="node_modules ")
 app.mount("/images", StaticFiles(directory=BASE_DIR / "images"), name="images")
 
 
