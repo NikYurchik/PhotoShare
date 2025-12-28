@@ -15,7 +15,10 @@ async function postLoginAsJson({ url, formData }) {
     const response = await fetch(url, fetchOptions);
 
     if (!response.ok) {
-        const errorMessage = await response.text();
+        let errorMessage = await response.text();
+        if (!Boolean(errorMessage)) {
+            errorMessage = "HTTP error " + response.status;
+        }
         throw new Error(errorMessage);
     }
 
@@ -71,6 +74,7 @@ async function handleLoginSubmit(event) {
 
     } catch (error) {
         console.error(error);
+        alert("Login error! " + error);
     }
 
     if (isRedirect) {
