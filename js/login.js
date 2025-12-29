@@ -74,7 +74,7 @@ async function handleLoginSubmit(event) {
 
     } catch (error) {
         console.error(error);
-        alert("Login error! " + error);
+        alert("Login " + error);
     }
 
     if (isRedirect) {
