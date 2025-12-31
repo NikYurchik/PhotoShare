@@ -2,6 +2,24 @@
 
 {% block content %}
 
+<script>
+    async function loadImage() {
+        const img = document.getElementById("photo-url");
+        if (img.naturalWidth < img.clientWidth) {
+            img.width = img.naturalWidth;
+        } else {
+            img.width = img.parentNode.clientWidth;
+        }
+        const osize = document.getElementById("photo-size");
+        osize.textContent = "Original sizes:" + img.naturalWidth + " x " + img.naturalHeight;
+    }
+
+    async function clickOrigPhoto(photo_id) {
+        let urlRedirect = `${document.baseURI}api/photos/${photo_id}`;
+        window.location.href = `${urlRedirect}`;
+    }
+</script>
+
 <div class="author-details">
     <div class="photo-title">
         <div style="display: flex;">
@@ -44,7 +62,6 @@
                     <div class="group-inp">
                         <button type="submit" class="btn btn-primary">{% if transform.file_url %}Update{% else %}Create{% endif %}</button>
                         <button type="reset" class="btn btn-primary secondary" id="form-btn-reset">Reset</button>
-                        <button type="button" class="btn btn-primary secondary" id="form-btn-reset" onclick="clickOrigPhoto('{{photo.id}}')">Close</button>
                     </div>
                 </div>
 
@@ -54,23 +71,22 @@
 
 </div>
 
-<script>
-    async function loadImage() {
-        const img = document.getElementById("photo-url");
-        if (img.naturalWidth < img.clientWidth) {
-            img.width = img.naturalWidth;
-        } else {
-            img.width = img.parentNode.clientWidth;
-        }
-        const osize = document.getElementById("photo-size");
-        osize.textContent = "Original sizes:" + img.naturalWidth + " x " + img.naturalHeight;
-    }
-
-    async function clickOrigPhoto(photo_id) {
-        let urlRedirect = `${document.baseURI}api/photos/${photo_id}`;
-        window.location.href = `${urlRedirect}`;
-    }
-</script>
+<!-- <script type="module" src="/cloud.js"> -->
+<!-- <script type="text/javascript" src="cloud.js"> -->
+<!-- // <script type="module" >
+// <script  type="text/javascript" >
+    // Import the Cloudinary class.
+    // console.log('Import the Cloudinary class.')
+    // import Cloudinary from "/node_modules/@cloudinary/url-gen";
+    // console.log('import Ok')
+    // // Create a Cloudinary instance and set your cloud name.
+    // export const cld = new Cloudinary({
+    //   cloud: {
+    //     cloudName: 'dqglsxwms'
+    //   }
+    // });
+    // console.log(cld) -->
+<!-- </script> -->
 
 <script src="/js/transform3.js"></script>
 
